@@ -1,14 +1,17 @@
-- Always test your implementation with unit tests
-- Follow best practices for testing, don't build brittle tests
-- Run pre-commit on changed or new files
-- Fix any issue you, especially pre-existing issues
-- All important command are maintained in ./run
-- Local plugin install directory: `~/projects/visual-paradigm-mcp-plugin`
-- Local Plugin API JAR: `~/.local/opt/Visual_Paradigm_17.2/lib/openapi.jar`
-
-- [Visual Paradigm Plugin API Java
-Doc](https://www.visual-paradigm.com/support/documents/pluginjavadoc/overview-summary.html):
-  Direct access to project models, diagrams, and elements
+- Use `./run` for all build operations (build, test, package, install, all)
+- Run pre-commit on new or changed files
+- Fix especially pre-existing issues
+- Do not suppress warnings
+- Always test implementation with unit tests
+- Handle null parameters in plugin lifecycle methods
+- Remove old implementations completely - no backward compatibility needed
+- Model elements in `com.vp.plugin.model.*`, diagram elements in `com.vp.plugin.diagram.*`
+- Use `IModelElementFactory.instance().create*()` - don't assume UI model methods exist
+- Create UI shapes via `DiagramManager.createDiagramElement(diagram, modelElement)`
+- Check API documentation for exact method names - don't assume naming patterns
+- Get managers via `ApplicationManager.instance().getDiagramManager()` and `getProjectManager()`
+- Use the constants in `IDiagramTypeConstants` for diagram creation
+- [Visual Paradigm Plugin API JavaDoc](https://www.visual-paradigm.com/support/documents/pluginjavadoc/overview-summary.html)
 - [Create Use Case Diagram using Open API](knowhow.visual-paradigm.com/openapi/use-case-diagram/)
 - [MCP Specification](https://modelcontextprotocol.io/specification/2025-06-18)
 - [Build an MCP server](https://modelcontextprotocol.io/docs/develop/build-server)
