@@ -7,7 +7,7 @@ diagramming capabilities.
 ## Architecture
 
 - **MCP Java SDK**: Standardized protocol implementation for AI client communication
-- **HTTP Transport**: HTTP communication with MCP clients
+- **MCP Transport**: Streamable HTTP communication with MCP clients
 - **Visual Paradigm Plugin API**: Integration with Visual Paradigm's modeling capabilities
 - **JUnit**: Use JUnit for unit tests
 - **Mockito**: Use Mockito for mocks tests

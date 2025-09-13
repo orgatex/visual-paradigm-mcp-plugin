@@ -2,6 +2,7 @@
 - Run pre-commit on new or changed files
 - Fix especially pre-existing issues
 - Do not suppress warnings
+- If you change the README, first read it carefully
 - Always test implementation with unit tests
 - Handle null parameters in plugin lifecycle methods
 - Remove old implementations completely - no backward compatibility needed
@@ -12,6 +13,7 @@
 - Get managers via `ApplicationManager.instance().getDiagramManager()` and `getProjectManager()`
 - Use the constants in `IDiagramTypeConstants` for diagram creation
 - [Visual Paradigm Plugin API JavaDoc](https://www.visual-paradigm.com/support/documents/pluginjavadoc/overview-summary.html)
+- [Java SDK for Model Context Protocol servers and clients](https://github.com/modelcontextprotocol/java-sdk)
 - [Create Use Case Diagram using Open API](knowhow.visual-paradigm.com/openapi/use-case-diagram/)
 - [MCP Specification](https://modelcontextprotocol.io/specification/2025-06-18)
 - [Build an MCP server](https://modelcontextprotocol.io/docs/develop/build-server)
