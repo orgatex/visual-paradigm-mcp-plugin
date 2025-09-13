@@ -43,6 +43,7 @@ show_help() {
 	echo
 	echo "Commands:"
 	echo "  build       - Clean and build the plugin"
+	echo "  format      - Format Java code with Google Java Format"
 	echo "  test        - Run unit tests"
 	echo "  package     - Package the plugin for distribution"
 	echo "  install     - Install plugin to Visual Paradigm"
@@ -105,6 +106,13 @@ main() {
 		export MAVEN_OPTS
 		mvn clean compile
 		log_success "Build completed"
+		;;
+	format)
+		check_prerequisites
+		log_info "Formatting Java code with Google Java Format..."
+		export MAVEN_OPTS
+		mvn fmt:format
+		log_success "Code formatting completed"
 		;;
 	test)
 		check_prerequisites
