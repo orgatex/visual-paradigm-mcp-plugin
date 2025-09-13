@@ -180,7 +180,7 @@ public class AddRelationshipActionController implements VPActionController {
   }
 
   /** Custom cell renderer for displaying use case names in combo boxes. */
-  private static class UseCaseListCellRenderer extends DefaultListCellRenderer {
+  private static final class UseCaseListCellRenderer extends DefaultListCellRenderer {
     @Override
     public Component getListCellRendererComponent(
         JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {

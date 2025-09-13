@@ -84,7 +84,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.36</version>
+            <version>1.18.40</version>
             <scope>provided</scope>
         </dependency>
 
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.8.0</version>
+            <version>5.19.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -166,7 +166,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.21.0</version>
+                <version>3.25.0</version>
                 <configuration>
                     <rulesets>
                         <ruleset>/rulesets/java/quickstart.xml</ruleset>
