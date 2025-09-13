@@ -44,6 +44,14 @@
                     toolbarPath="usecase.ActionSet1.Toolbar1/#">
                 <actionController class="com.brunnen.vp.usecase.action.GenerateUseCaseReportActionController"/>
             </action>
+
+            <action id="usecase.ActionSet1.add-relationship"
+                    actionType="generalAction"
+                    label="Relationship (include and extend)"
+                    style="normal"
+                    toolbarPath="usecase.ActionSet1.Toolbar1/#">
+                <actionController class="com.brunnen.vp.usecase.action.AddRelationshipActionController"/>
+            </action>
         </actionSet>
     </actionSets>
 </plugin>
