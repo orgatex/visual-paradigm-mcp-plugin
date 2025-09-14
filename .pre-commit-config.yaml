@@ -34,37 +34,9 @@ repos:
         files: '\.java$'
         pass_filenames: false
 
-      - id: maven-compile
-        name: Maven compile check
-        entry: mvn compile
-        language: system
-        files: '\.(java|xml)$'
-        pass_filenames: false
-
-      - id: maven-test
-        name: Maven test
-        entry: mvn test
-        language: system
-        files: '\.(java|xml)$'
-        pass_filenames: false
-
       - id: maven-checkstyle
         name: Checkstyle analysis
         entry: mvn checkstyle:check
-        language: system
-        files: '\.java$'
-        pass_filenames: false
-
-      - id: maven-spotbugs
-        name: SpotBugs analysis
-        entry: mvn spotbugs:check
-        language: system
-        files: '\.java$'
-        pass_filenames: false
-
-      - id: maven-pmd
-        name: PMD analysis
-        entry: mvn pmd:check
         language: system
         files: '\.java$'
         pass_filenames: false

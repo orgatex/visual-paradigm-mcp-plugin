@@ -52,6 +52,8 @@ show_help() {
 	echo "  validate    - Validate plugin configuration"
 	echo "  standalone  - Test standalone MCP server"
 	echo "  health      - Check plugin health"
+	echo "  spotbugs    - Run SpotBugs static analysis"
+	echo "  pmd         - Run PMD static analysis"
 	echo "  all         - Run build, test, package, and install"
 	echo "  help        - Show this help message"
 	echo
@@ -127,6 +129,20 @@ main() {
 		export MAVEN_OPTS
 		mvn package
 		log_success "Package created"
+		;;
+	spotbugs)
+		check_prerequisites
+		log_info "Running SpotBugs static analysis..."
+		export MAVEN_OPTS
+		mvn compile spotbugs:check
+		log_success "SpotBugs analysis completed"
+		;;
+	pmd)
+		check_prerequisites
+		log_info "Running PMD static analysis..."
+		export MAVEN_OPTS
+		mvn compile pmd:check
+		log_success "PMD analysis completed"
 		;;
 	install)
 		check_prerequisites

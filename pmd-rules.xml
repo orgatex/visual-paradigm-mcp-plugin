@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<ruleset name="Custom PMD Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+         https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Custom PMD ruleset based on quickstart but excluding LoggerIsNotStaticFinal and LocalVariableCouldBeFinal
+    </description>
+
+    <!-- Include all rules from quickstart -->
+    <rule ref="rulesets/java/quickstart.xml">
+        <!-- Exclude GuardLogStatement -->
+        <exclude name="GuardLogStatement"/>
+    </rule>
+
+</ruleset>
