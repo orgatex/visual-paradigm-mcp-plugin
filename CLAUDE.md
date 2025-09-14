@@ -1,3 +1,5 @@
+- Before starting a Task, read the PROJECT_STATUS.md file
+- After finishing a Task, write a PROJECT_STATUS.md file
 - Use `./run` for all build operations (build, test, package, install, all)
 - Run pre-commit on new or changed files
 - Fix especially pre-existing issues
