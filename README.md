@@ -2,46 +2,60 @@
 
 A Model Context Protocol (MCP) server plugin for Visual Paradigm that provides
 AI applications with seamless integration to Visual Paradigm's modeling and
-diagramming capabilities.
+diagramming modeling capabilities. The MCP server is embedded directly within
+the Visual Paradigm plugin, starting automatically when the plugin loads.
 
 ## Architecture
 
-- **Spring AI 1.1.0-M1**: Model Context Protocol integration
-- **Visual Paradigm 17.2**: CAD/UML modeling platform integration
+- **Spring AI 1.1.0-M1**: Model Context Protocol server integration
+- **Visual Paradigm 17.2**: UML modeling platform integration
 - **Maven**: Build automation and dependency management
 - **MCP Transport**: Streamable HTTP communication with MCP clients
 - **Visual Paradigm Plugin API**: Integration with Visual Paradigm's modeling capabilities
-- **JUnit**: Use JUnit for unit tests
-- **Mockito**: Use Mockito for mocks tests
+- **JUnit & Mockito**: Comprehensive testing framework
 
 ## Features
 
-### MCP (Planned)
+### MCP Server Integration
 
-#### Prompts
+The plugin includes an embedded MCP server that:
 
-To be defined.
+- **Auto-starts** when Visual Paradigm plugin is loaded
+- **Auto-stops** when Visual Paradigm plugin is unloaded
+- Runs on **port 8080** with SSE endpoint `/mcp/messages`
+- Provides **tool capabilities** for external MCP clients
 
-#### Resources
+#### Available MCP Tools
+
+- **createUseCaseDiagram(diagramName)**: Create new use case diagrams
+- **addActor(actorName, diagramName)**: Add actors to specific diagrams
+- **addUseCase(useCaseName, diagramName)**: Add use cases to diagrams
+- **addRelationship(actorName, useCaseName, relationshipType)**: Create relationships between actors and use cases
+- **generateReport(diagramName)**: Generate reports for use case diagrams
+
+#### Future MCP Features (Planned)
+
+##### Resources
 
 - Server Status: Monitor MCP server health and connection status
-- Project Information: Retrieve current project details (name, ID, version)
-- Case Diagrams: View Diagrams, Actors, Use Cases and Relationships
+- Project Information: Retrieve current project details
+- Diagram Metadata: Access diagram properties and structure
 
-#### Tools
+##### Prompts
 
-To be refined:
-
-- Full support for Use Case Diagrams:
-  - Diagram: Create, Update, Delete
-  - Actors: Create, Update, Delete
-  - Use Cases: Create, Update, Delete
-  - Relationships: Create, Update, Delete
+- Use Case Templates: Generate standard use case patterns
+- Diagram Validation: Check diagram completeness and consistency
 
 ### Plugin User Interface
 
 - **Toggle MCP Server**: Start/stop the MCP server from Visual Paradigm toolbar
 - **Server Status**: View detailed MCP server status and capabilities
+
+### Plugin Integration
+
+- **Automatic Lifecycle Management**: MCP server starts/stops with plugin
+- **Error Handling**: Robust startup/shutdown with detailed logging
+- **Spring Boot Integration**: Full Spring framework capabilities within Visual Paradigm
 
 ## Usage
 
@@ -67,7 +81,28 @@ Build, test and install with the `./run` command:
    ./run install
    ```
 
-4. **Start Visual Paradigm** and look for the MCP toolbar actions
+4. **Start Visual Paradigm** - the MCP server will start automatically
+
+### Using the MCP Server
+
+Once Visual Paradigm is running with the plugin:
+
+- **MCP Server Endpoint**: `http://localhost:8080/mcp/messages` (SSE)
+- **Server Name**: `visual-paradigm-use-case-mcp-server`
+- **Available Tools**: 5 use case diagram operations
+
+#### Connecting with Claude or MCP Clients
+
+Configure your MCP client to connect to:
+
+```json
+{
+  "transport": {
+    "type": "sse",
+    "url": "http://localhost:8080/mcp/messages"
+  }
+}
+```
 
 ## Development
 
@@ -93,24 +128,23 @@ Build, test and install with the `./run` command:
 - **Unit and Integration Tests**: Comprehensive Mockito/JUnit tests for all components
 - **System Tests**: MCP Inspector protocol validation
 - **Manual Testing**: Visual Paradigm UI integration testing
+- **Spring Context Tests**: Verify MCP server configuration
+- **Tool Service Tests**: Validate all MCP tool implementations
+- **Plugin Lifecycle Tests**: Test integration with Visual Paradigm
 
-#### Unit and Integrations Tests
-
-Run all tests:
+#### Unit and Integration Tests
 
 ```bash
 ./run test
 ```
 
-### MCP Inspector (Planned)
+#### MCP Protocol Testing (Future)
 
 Test with MCP Inspector for protocol validation:
 
 ```bash
-./run inspector
+./run inspector test
 ```
-
-### Show Available Tools
 
 Display all MCP features and their descriptions:
 
@@ -120,10 +154,17 @@ Display all MCP features and their descriptions:
 
 ### Debugging
 
-Enable detailed logging:
+**MCP Server Logging**: Check Visual Paradigm console output for:
 
-```bash
-java -jar visual-paradigm-mcp-plugin.jar --logging.level.com.brunnen.vp=DEBUG
+- `"MCP Server started for Use Case Plugin"` - successful startup
+- `"MCP Server stopped"` - clean shutdown
+- Error messages if startup fails
+
+**Configuration**: Located in `src/main/resources/application-mcp.properties`
+
+```properties
+logging.level.org.springframework.ai.mcp=DEBUG
+logging.level.root=INFO
 ```
 
 ### Support
