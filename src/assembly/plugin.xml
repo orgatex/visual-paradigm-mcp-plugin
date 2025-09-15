@@ -1,56 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin id="visual-paradigm-mcp-plugin"
-        name="MCP Server Plugin"
+        name="Visual Paradigm MCP Server Plugin"
         provider="Manoel Brunnen"
         class="com.brunnen.vp.usecase.VPUseCasePlugin">
 
     <runtime>
+        <!-- Include Spring Boot and MCP dependencies -->
     </runtime>
 
     <actionSets>
-        <actionSet id="usecase.ActionSet1">
-            <toolbar id="usecase.ActionSet1.Toolbar1"
+        <actionSet id="mcp.ActionSet1">
+            <toolbar id="mcp.ActionSet1.Toolbar1"
                      orientation="north"
                      index="last"/>
 
-            <action id="usecase.ActionSet1.create-diagram"
+            <action id="mcp.ActionSet1.toggle-server"
                     actionType="generalAction"
-                    label="Create Use Case Diagram"
+                    label="Toggle MCP Server"
                     style="normal"
-                    toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.CreateUseCaseDiagramActionController"/>
+                    toolbarPath="mcp.ActionSet1.Toolbar1/#">
+                <actionController class="com.brunnen.vp.usecase.action.McpServerToggleActionController"/>
             </action>
 
-            <action id="usecase.ActionSet1.add-usecase"
+            <action id="mcp.ActionSet1.server-status"
                     actionType="generalAction"
-                    label="Add Use Case"
+                    label="MCP Server Status"
                     style="normal"
-                    toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.AddUseCaseActionController"/>
-            </action>
-
-            <action id="usecase.ActionSet1.add-actor"
-                    actionType="generalAction"
-                    label="Add Actor"
-                    style="normal"
-                    toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.AddActorActionController"/>
-            </action>
-
-            <action id="usecase.ActionSet1.generate-report"
-                    actionType="generalAction"
-                    label="Generate Report"
-                    style="normal"
-                    toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.GenerateUseCaseReportActionController"/>
-            </action>
-
-            <action id="usecase.ActionSet1.add-relationship"
-                    actionType="generalAction"
-                    label="Relationship (include and extend)"
-                    style="normal"
-                    toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.AddRelationshipActionController"/>
+                    toolbarPath="mcp.ActionSet1.Toolbar1/#">
+                <actionController class="com.brunnen.vp.usecase.action.McpServerStatusActionController"/>
             </action>
         </actionSet>
     </actionSets>
