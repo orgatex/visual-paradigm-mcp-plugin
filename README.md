@@ -6,24 +6,13 @@ diagramming capabilities.
 
 ## Architecture
 
-- **MCP Java SDK**: Standardized protocol implementation for AI client communication
+- **Spring AI 1.1.0-M1**: Model Context Protocol integration
+- **Visual Paradigm 17.2**: CAD/UML modeling platform integration
+- **Maven**: Build automation and dependency management
 - **MCP Transport**: Streamable HTTP communication with MCP clients
 - **Visual Paradigm Plugin API**: Integration with Visual Paradigm's modeling capabilities
 - **JUnit**: Use JUnit for unit tests
 - **Mockito**: Use Mockito for mocks tests
-
-## Project Status
-
-### Phase 1: Use Case Plugin (COMPLETED)
-- Replaced confluence plugin with working Use Case Plugin example
-- Implemented 4 action controllers with toolbar buttons
-- Full build, test, and deployment pipeline working
-- Demonstrates Visual Paradigm Plugin API usage
-
-### Phase 2: Implement MCP server functionality
-### Phase 3: Add MCP tools for use case diagram manipulation
-### Phase 4: Add MCP resources for diagram viewing
-### Phase 5: Add MCP prompts for AI-assisted modeling
 
 ## Features
 
@@ -35,49 +24,110 @@ To be defined.
 
 #### Resources
 
-To be defined:
-
-- Full support for Use Case Diagrams:
-  - View Diagram, Use Cases, Relationships
+- Server Status: Monitor MCP server health and connection status
+- Project Information: Retrieve current project details (name, ID, version)
+- Case Diagrams: View Diagrams, Actors, Use Cases and Relationships
 
 #### Tools
 
 To be refined:
 
 - Full support for Use Case Diagrams:
-  - Diagram: Create, View, Update, Delete
-  - Use Cases: Create, View, Update, Delete
-  - Relationships: Create, View, Update, Delete
+  - Diagram: Create, Update, Delete
+  - Actors: Create, Update, Delete
+  - Use Cases: Create, Update, Delete
+  - Relationships: Create, Update, Delete
 
 ### Plugin User Interface
 
-**Phase 1 - Use Case Plugin Implementation:**
-- **Create Use Case Diagram**: Creates new use case diagrams
-- **Add Use Case**: Adds use case elements to active diagrams
-- **Add Actor**: Adds actor elements to active diagrams
-- **Generate Report**: Creates summary reports of project use cases and actors
-
-**Planned MCP Interface:**
-- **MCP Status**: Check server status
-- **Toggle MCP Server**: Start/stop the server
-- **MCP Settings**: View configuration information
+- **Toggle MCP Server**: Start/stop the MCP server from Visual Paradigm toolbar
+- **Server Status**: View detailed MCP server status and capabilities
 
 ## Usage
 
+### Installation
+
 Build, test and install with the `./run` command:
 
+1. **Build the plugin**:
+
+   ```bash
+   ./run build
+   ```
+
+2. **Package for distribution**:
+
+   ```bash
+   ./run package
+   ```
+
+3. **Install to Visual Paradigm**:
+
+   ```bash
+   ./run install
+   ```
+
+4. **Start Visual Paradigm** and look for the MCP toolbar actions
+
+## Development
+
+### Building
+
 ```bash
-./run all      # Complete build, test, package and install process
-./run build    # Compile the source code
-./run test     # Run unit tests
-./run package  # Create the plugin package
-./run install  # Install to Visual Paradigm
+./run build
+./run test
+./run package
+./run all          # Build, test, package, and install
 ```
 
-### Configuration
+### Code Quality
 
-#### Visual Paradigm Plugin
-The current Use Case Plugin is automatically installed to `~/.config/VisualParadigm/plugins/` and provides a working example of Visual Paradigm Plugin API usage.
+```bash
+./run format       # Format code with Google Java Format
+./run spotbugs     # Run SpotBugs static analysis
+./run pmd          # Run PMD static analysis
+```
 
-#### Claude Desktop Configuration (Planned)
-MCP server integration will be configured here once MCP functionality is implemented.
+### Testing
+
+- **Unit and Integration Tests**: Comprehensive Mockito/JUnit tests for all components
+- **System Tests**: MCP Inspector protocol validation
+- **Manual Testing**: Visual Paradigm UI integration testing
+
+#### Unit and Integrations Tests
+
+Run all tests:
+
+```bash
+./run test
+```
+
+### MCP Inspector (Planned)
+
+Test with MCP Inspector for protocol validation:
+
+```bash
+./run inspector
+```
+
+### Show Available Tools
+
+Display all MCP features and their descriptions:
+
+```bash
+./run inspector list
+```
+
+### Debugging
+
+Enable detailed logging:
+
+```bash
+java -jar visual-paradigm-mcp-plugin.jar --logging.level.com.brunnen.vp=DEBUG
+```
+
+### Support
+
+- **MCP Protocol**: [Model Context Protocol Specification](https://modelcontextprotocol.io/specification/2025-06-18/architecture)
+- **Spring AI**: [Spring AI MCP Documentation](https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-overview.html)
+- **Visual Paradigm**: [Plugin API Documentation](https://www.visual-paradigm.com/support/documents/pluginjavadoc/)

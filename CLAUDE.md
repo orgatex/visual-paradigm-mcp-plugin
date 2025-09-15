@@ -4,21 +4,21 @@
 - Run pre-commit on new or changed files
 - Fix especially pre-existing issues
 - Do not suppress warnings
-- If you change the README, first read it carefully
-- Always test implementation with unit tests
+- If you change the README, first read it carefully. Only do sensible changes.
+- Do not restructure the README. You may make little improvements, though.
+- Test your implementation with unit or integration tests
 - Handle null parameters in plugin lifecycle methods
 - Remove old implementations completely - no backward compatibility needed
-- Model elements in `com.vp.plugin.model.*`, diagram elements in `com.vp.plugin.diagram.*`
-- Use `IModelElementFactory.instance().create*()` - don't assume UI model methods exist
-- Create UI shapes via `DiagramManager.createDiagramElement(diagram, modelElement)`
 - Check API documentation for exact method names - don't assume naming patterns
-- Get managers via `ApplicationManager.instance().getDiagramManager()` and `getProjectManager()`
-- Use the constants in `IDiagramTypeConstants` for diagram creation
+- Use Streamable HTTP Transport for MCP
+- Visual Paradigm runs on Java 11, the plugin must compatible to Java 11
 - [Visual Paradigm Plugin API JavaDoc](https://www.visual-paradigm.com/support/documents/pluginjavadoc/overview-summary.html)
-- [Java SDK for Model Context Protocol servers and clients](https://github.com/modelcontextprotocol/java-sdk)
 - [Create Use Case Diagram using Open API](knowhow.visual-paradigm.com/openapi/use-case-diagram/)
+- [Spring AI MCP Server Boot Starter](https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-streamable-http-server-boot-starter-docs.html)
+- [Spring AI MCP Server Annotations](https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-annotations-server.html)
+- [Spring AI MCP Server Annotations Special Params](https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-annotations-special-params.html)
+- [Spring AI MCP Annotations Examples](https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-annotations-examples.html)
 - [MCP Specification](https://modelcontextprotocol.io/specification/2025-06-18)
-- [Build an MCP server](https://modelcontextprotocol.io/docs/develop/build-server)
-- [Java MCP Server](https://modelcontextprotocol.io/sdk/java/mcp-server)
+- [Build an MCP server](https://modelcontextprotocol.io/docs/develop/build-server#java)
 - [MCP Inspector](https://modelcontextprotocol.io/legacy/tools/inspector)
 - [MCP Transports](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)
