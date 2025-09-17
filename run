@@ -1,0 +1,150 @@
+#!/bin/bash
+
+# Visual Paradigm MCP Plugin - Development and Testing Script
+# This script helps with building, testing, and deploying the plugin
+
+set -e # Exit on any error
+
+# Configuration
+PLUGIN_NAME="visual-paradigm-mcp-plugin"
+PLUGIN_VERSION="0.1.0"
+MAVEN_OPTS="-Xmx1g"
+VP_PLUGINS_DIR="${HOME}/.config/VisualParadigm/plugins"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Logging functions
+log_info() {
+	echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+	echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warn() {
+	echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+	echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Help function
+show_help() {
+	echo "Visual Paradigm MCP Plugin - Build and Test Script"
+	echo
+	echo "Usage: $0 [COMMAND]"
+	echo
+	echo "Commands:"
+	echo "  build       - Clean and build the plugin"
+	echo "  test        - Run unit tests"
+	echo "  package     - Package the plugin for distribution"
+	echo "  install     - Install plugin to Visual Paradigm"
+	echo "  uninstall   - Remove plugin from Visual Paradigm"
+	echo "  clean       - Clean build artifacts"
+	echo "  validate    - Validate plugin configuration"
+	echo "  standalone  - Test standalone MCP server"
+	echo "  health      - Check plugin health"
+	echo "  all         - Run build, test, package, and install"
+	echo "  help        - Show this help message"
+	echo
+}
+
+# Check prerequisites
+check_prerequisites() {
+	log_info "Checking prerequisites..."
+
+	# Check Java
+	if ! command -v java &>/dev/null; then
+		log_error "Java is not installed or not in PATH"
+		return 1
+	fi
+
+	local java_version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+	log_info "Java version: $java_version"
+
+	# Check Maven
+	if ! command -v mvn &>/dev/null; then
+		log_error "Maven is not installed or not in PATH"
+		return 1
+	fi
+
+	local maven_version=$(mvn -version 2>/dev/null | head -n1 | cut -d' ' -f3)
+	log_info "Maven version: $maven_version"
+
+	# Check if we're in the right directory
+	if [[ ! -f "pom.xml" ]]; then
+		log_error "pom.xml not found. Are you in the plugin root directory?"
+		return 1
+	fi
+
+	log_success "Prerequisites check passed"
+}
+
+# Main execution
+main() {
+	echo "Visual Paradigm MCP Plugin - Development Script"
+	echo "==============================================="
+	echo
+
+	if [[ $# -eq 0 ]]; then
+		show_help
+		exit 1
+	fi
+
+	case "$1" in
+	build)
+		check_prerequisites
+		log_info "Building ${PLUGIN_NAME}..."
+		export MAVEN_OPTS
+		mvn clean compile
+		log_success "Build completed"
+		;;
+	test)
+		check_prerequisites
+		log_info "Running tests for ${PLUGIN_NAME}..."
+		export MAVEN_OPTS
+		mvn test
+		log_success "Tests completed"
+		;;
+	package)
+		check_prerequisites
+		log_info "Packaging ${PLUGIN_NAME}..."
+		export MAVEN_OPTS
+		mvn package
+		log_success "Package created"
+		;;
+	install)
+		check_prerequisites
+		log_info "Installing ${PLUGIN_NAME} to Visual Paradigm..."
+		mkdir -p "$VP_PLUGINS_DIR"
+		export MAVEN_OPTS
+		mvn install -P install
+		log_success "Plugin installed"
+		;;
+	all)
+		check_prerequisites
+		log_info "Running complete build process..."
+		export MAVEN_OPTS
+		mvn clean compile test package install -P install
+		log_success "Complete build process finished"
+		;;
+	help)
+		show_help
+		;;
+	*)
+		log_error "Unknown command: $1"
+		show_help
+		exit 1
+		;;
+	esac
+}
+
+# Execute main function with all arguments
+main "$@"

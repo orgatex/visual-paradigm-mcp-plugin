@@ -1,0 +1,59 @@
+---
+# Enable:
+# pre-commit install --hook-type pre-commit
+# pre-commit install --hook-type commit-msg
+#
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  # General hooks for all files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-vcs-permalinks
+      - id: check-xml
+      - id: check-yaml
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: double-quote-string-fixer
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: requirements-txt-fixer
+      - id: trailing-whitespace
+
+  # Java-specific hooks
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.10.0
+    hooks:
+      - id: pretty-format-java
+        args: [--autofix]
+
+  # Custom Maven hooks
+  - repo: local
+    hooks:
+      - id: maven-compile
+        name: Maven compile check
+        entry: mvn compile -Pdev
+        language: system
+        files: '\.(java|xml)$'
+        pass_filenames: false
+
+      - id: maven-test
+        name: Maven test
+        entry: mvn test -Pdev
+        language: system
+        files: '\.(java|xml)$'
+        pass_filenames: false
+
+      - id: maven-checkstyle
+        name: Maven checkstyle
+        entry: bash -c 'if mvn help:describe -Dplugin=org.apache.maven.plugins:maven-checkstyle-plugin
+          &>/dev/null; then mvn checkstyle:check -Pdev; fi'
+        language: system
+        files: '\.java$'
+        pass_filenames: false
