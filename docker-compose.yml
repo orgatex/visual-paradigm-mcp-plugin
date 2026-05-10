@@ -1,0 +1,19 @@
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vp-mcp-server
+    ports:
+      - "2026:2026"
+    environment:
+      - SPRING_PROFILES_ACTIVE=mcp
+      - SERVER_PORT=2026
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_AI_MCP=DEBUG
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "2", "http://localhost:2026/sse"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
