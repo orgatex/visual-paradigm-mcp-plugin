@@ -59,7 +59,7 @@ public class SequenceDiagramMcpTools extends AbstractDiagramMcpTools {
             lifeline.setBaseClassifier(baseClass);
 
             // Add to diagram
-            addToDiagram(diagram, lifeline, diagramName);
+            addToDiagram(diagram, lifeline);
 
             return "Added lifeline '" + lifelineName + "' to diagram '" + diagramName + "'";
           });

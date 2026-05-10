@@ -38,10 +38,16 @@ EOF
 cat > "$SRC_DIR/com/vp/plugin/DiagramManager.java" << 'EOF'
 package com.vp.plugin;
 public abstract class DiagramManager {
+    public static final int LAYOUT_AUTO = 0;
+    public static final int LAYOUT_HIERARCHIC = 1;
+    public static final int LAYOUT_ORGANIC = 2;
     public abstract com.vp.plugin.diagram.IDiagramUIModel createDiagram(String type);
     public abstract void openDiagram(com.vp.plugin.diagram.IDiagramUIModel d);
     public abstract com.vp.plugin.diagram.IDiagramElement createDiagramElement(com.vp.plugin.diagram.IDiagramUIModel d, com.vp.plugin.model.IModelElement m);
     public abstract com.vp.plugin.diagram.IDiagramElement createConnector(com.vp.plugin.diagram.IDiagramUIModel d, com.vp.plugin.model.IModelElement m, com.vp.plugin.diagram.IDiagramElement from, com.vp.plugin.diagram.IDiagramElement to, java.awt.Point[] pts);
+    public abstract com.vp.plugin.diagram.IDiagramElement createConnector(com.vp.plugin.diagram.IDiagramUIModel d, String connectorType, com.vp.plugin.diagram.IDiagramElement from, com.vp.plugin.diagram.IDiagramElement to, java.awt.Point[] pts);
+    public abstract void autoLayout(com.vp.plugin.diagram.IDiagramUIModel d, int layoutType);
+    public abstract void layout(com.vp.plugin.diagram.IDiagramUIModel d, Object option);
     public abstract com.vp.plugin.diagram.IDiagramUIModel getActiveDiagram();
     public abstract com.vp.plugin.diagram.IDiagramUIModel[] getDiagrams(String type);
 }
@@ -66,7 +72,10 @@ EOF
 
 cat > "$SRC_DIR/com/vp/plugin/model/IProject.java" << 'EOF'
 package com.vp.plugin.model;
-public interface IProject extends IModelElement { java.util.Iterator<?> allLevelModelElementIterator(); }
+public interface IProject extends IModelElement {
+    java.util.Iterator<?> allLevelModelElementIterator();
+    java.util.Iterator<?> diagramIterator();
+}
 EOF
 
 cat > "$SRC_DIR/com/vp/plugin/model/IClass.java" << 'EOF'
@@ -246,12 +255,40 @@ EOF
 # Diagram interfaces
 cat > "$SRC_DIR/com/vp/plugin/diagram/IDiagramUIModel.java" << 'EOF'
 package com.vp.plugin.diagram;
-public interface IDiagramUIModel extends com.vp.plugin.model.IModelElement { java.util.Iterator<?> diagramElementIterator(); }
+public interface IDiagramUIModel extends com.vp.plugin.model.IModelElement {
+    java.util.Iterator<?> diagramElementIterator();
+    IDiagramElement[] toDiagramElementArray();
+    int diagramElementCount();
+    IDiagramElement getDiagramElementById(String id);
+    IDiagramElement[] getDiagramElementsByName(String name);
+    IDiagramElement getDiagramElementByName(String name, boolean includeSubDiagram);
+    void addDiagramElement(IDiagramElement element);
+    void removeDiagramElement(IDiagramElement element);
+    String getType();
+    int getX();
+    int getY();
+    int getWidth();
+    int getHeight();
+}
 EOF
 
 cat > "$SRC_DIR/com/vp/plugin/diagram/IDiagramElement.java" << 'EOF'
 package com.vp.plugin.diagram;
-public interface IDiagramElement { com.vp.plugin.model.IModelElement getModelElement(); void setBounds(int x, int y, int w, int h); }
+public interface IDiagramElement {
+    com.vp.plugin.model.IModelElement getModelElement();
+    void setModelElement(com.vp.plugin.model.IModelElement m);
+    void setBounds(int x, int y, int w, int h);
+    int getX();
+    int getY();
+    int getWidth();
+    int getHeight();
+    void setX(int x);
+    void setY(int y);
+    void setWidth(int w);
+    void setHeight(int h);
+    void setLocation(int x, int y);
+    void setSize(int w, int h);
+}
 EOF
 
 cat > "$SRC_DIR/com/vp/plugin/diagram/IDiagramTypeConstants.java" << 'EOF'

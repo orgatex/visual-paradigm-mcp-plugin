@@ -57,7 +57,7 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
 
             IClass cls = getModelElementFactory().createClass();
             cls.setName(className);
-            addToDiagram(diagram, cls, diagramName);
+            addToDiagram(diagram, cls);
 
             return "Added class '" + className + "' to diagram '" + diagramName + "'";
           });
@@ -150,6 +150,12 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (source == null || target == null) {
               return "Class not found: " + (source == null ? fromClass : toClass);
             }
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Class not on diagram: "
+                  + (fromElement == null ? fromClass : toClass);
+            }
 
             IAssociation assoc = getModelElementFactory().createAssociation();
             assoc.setFrom(source);
@@ -165,7 +171,7 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (toMultiplicity != null && !toMultiplicity.trim().isEmpty()) {
               toEnd.setMultiplicity(toMultiplicity.trim());
             }
-            getDiagramManager().createDiagramElement(diagram, assoc);
+            getDiagramManager().createConnector(diagram, assoc, fromElement, toElement, null);
 
             return "Added association from '" + fromClass + "' to '" + toClass + "'";
           });
@@ -190,11 +196,17 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (source == null || target == null) {
               return "Class not found: " + (source == null ? fromClass : toClass);
             }
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Class not on diagram: "
+                  + (fromElement == null ? fromClass : toClass);
+            }
 
             IGeneralization gen = getModelElementFactory().createGeneralization();
             gen.setFrom(source);
             gen.setTo(target);
-            getDiagramManager().createDiagramElement(diagram, gen);
+            getDiagramManager().createConnector(diagram, gen, fromElement, toElement, null);
 
             return "Added generalization from '" + fromClass + "' extends '" + toClass + "'";
           });
@@ -220,6 +232,12 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (source == null || target == null) {
               return "Class not found: " + (source == null ? fromClass : toClass);
             }
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Class not on diagram: "
+                  + (fromElement == null ? fromClass : toClass);
+            }
 
             IAssociation assoc = getModelElementFactory().createAssociation();
             assoc.setFrom(source);
@@ -232,7 +250,7 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (toMultiplicity != null && !toMultiplicity.trim().isEmpty()) {
               ((IAssociationEnd) assoc.getToEnd()).setMultiplicity(toMultiplicity.trim());
             }
-            getDiagramManager().createDiagramElement(diagram, assoc);
+            getDiagramManager().createConnector(diagram, assoc, fromElement, toElement, null);
 
             return "Added aggregation from '" + fromClass + "' to '" + toClass + "'";
           });
@@ -258,6 +276,12 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (source == null || target == null) {
               return "Class not found: " + (source == null ? fromClass : toClass);
             }
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Class not on diagram: "
+                  + (fromElement == null ? fromClass : toClass);
+            }
 
             IAssociation assoc = getModelElementFactory().createAssociation();
             assoc.setFrom(source);
@@ -270,7 +294,7 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (toMultiplicity != null && !toMultiplicity.trim().isEmpty()) {
               ((IAssociationEnd) assoc.getToEnd()).setMultiplicity(toMultiplicity.trim());
             }
-            getDiagramManager().createDiagramElement(diagram, assoc);
+            getDiagramManager().createConnector(diagram, assoc, fromElement, toElement, null);
 
             return "Added composition from '" + fromClass + "' to '" + toClass + "'";
           });
@@ -295,11 +319,17 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (source == null || target == null) {
               return "Class not found: " + (source == null ? fromClass : toClass);
             }
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Class not on diagram: "
+                  + (fromElement == null ? fromClass : toClass);
+            }
 
             IDependency dep = getModelElementFactory().createDependency();
             dep.setFrom(source);
             dep.setTo(target);
-            getDiagramManager().createDiagramElement(diagram, dep);
+            getDiagramManager().createConnector(diagram, dep, fromElement, toElement, null);
 
             return "Added dependency from '" + fromClass + "' to '" + toClass + "'";
           });
@@ -324,11 +354,17 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             if (source == null || target == null) {
               return "Class not found: " + (source == null ? fromClass : toClass);
             }
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Class not on diagram: "
+                  + (fromElement == null ? fromClass : toClass);
+            }
 
             IRealization real = getModelElementFactory().createRealization();
             real.setFrom(source);
             real.setTo(target);
-            getDiagramManager().createDiagramElement(diagram, real);
+            getDiagramManager().createConnector(diagram, real, fromElement, toElement, null);
 
             return "Added realization from '" + fromClass + "' implements '" + toClass + "'";
           });
@@ -352,7 +388,7 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
             IClass iface = getModelElementFactory().createClass();
             iface.setName(interfaceName);
             iface.addStereotype("Interface");
-            addToDiagram(diagram, iface, diagramName);
+            addToDiagram(diagram, iface);
 
             return "Added interface '" + interfaceName + "' to diagram '" + diagramName + "'";
           });

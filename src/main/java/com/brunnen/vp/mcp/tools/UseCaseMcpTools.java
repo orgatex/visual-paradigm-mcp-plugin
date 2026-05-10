@@ -52,7 +52,7 @@ public class UseCaseMcpTools extends AbstractDiagramMcpTools {
 
             IActor actor = getModelElementFactory().createActor();
             actor.setName(actorName);
-            addToDiagram(diagram, actor, diagramName);
+            addToDiagram(diagram, actor);
 
             return "Added actor '" + actorName + "' to diagram '" + diagramName + "'";
           });
@@ -75,7 +75,7 @@ public class UseCaseMcpTools extends AbstractDiagramMcpTools {
 
             IUseCase useCase = getModelElementFactory().createUseCase();
             useCase.setName(useCaseName);
-            addToDiagram(diagram, useCase, diagramName);
+            addToDiagram(diagram, useCase);
 
             return "Added use case '" + useCaseName + "' to diagram '" + diagramName + "'";
           });
@@ -109,25 +109,31 @@ public class UseCaseMcpTools extends AbstractDiagramMcpTools {
               return "Target use case not found: " + targetName;
             }
 
+            IDiagramUIModel diagram = findDiagramContainingElement(source);
+            if (diagram == null) {
+              return "Source element not on any diagram: " + sourceName;
+            }
+
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Element not on diagram: "
+                  + (fromElement == null ? sourceName : targetName);
+            }
+
             DiagramManager dm = getDiagramManager();
 
             if ("Include".equalsIgnoreCase(relationshipType)) {
               IInclude include = getModelElementFactory().createInclude();
               include.setFrom(source);
               include.setTo(target);
-              IDiagramUIModel diagram = findDiagramContainingElement(source);
-              if (diagram != null) {
-                dm.createDiagramElement(diagram, include);
-              }
+              dm.createConnector(diagram, include, fromElement, toElement, null);
               return "Added Include relationship from '" + sourceName + "' to '" + targetName + "'";
             } else if ("Extend".equalsIgnoreCase(relationshipType)) {
               IExtend extend = getModelElementFactory().createExtend();
               extend.setFrom(source);
               extend.setTo(target);
-              IDiagramUIModel diagram = findDiagramContainingElement(source);
-              if (diagram != null) {
-                dm.createDiagramElement(diagram, extend);
-              }
+              dm.createConnector(diagram, extend, fromElement, toElement, null);
               return "Added Extend relationship from '" + sourceName + "' to '" + targetName + "'";
             } else {
               return "Unknown relationship type: " + relationshipType + ". Use Include or Extend.";

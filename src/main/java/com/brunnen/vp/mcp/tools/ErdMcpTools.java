@@ -3,6 +3,7 @@ package com.brunnen.vp.mcp.tools;
 import com.brunnen.vp.mcp.util.DiagramUtils;
 import com.brunnen.vp.mcp.util.ErdUtils;
 import com.vp.plugin.DiagramManager;
+import com.vp.plugin.diagram.IDiagramElement;
 import com.vp.plugin.diagram.IDiagramTypeConstants;
 import com.vp.plugin.diagram.IDiagramUIModel;
 import com.vp.plugin.model.IDBColumn;
@@ -47,7 +48,7 @@ public class ErdMcpTools extends AbstractDiagramMcpTools {
 
             IDBTable table = getModelElementFactory().createDBTable();
             table.setName(tableName);
-            addToDiagram(diagram, table, diagramName);
+            addToDiagram(diagram, table);
 
             return "Added table '" + tableName + "' to diagram '" + diagramName + "'";
           });
@@ -111,6 +112,12 @@ public class ErdMcpTools extends AbstractDiagramMcpTools {
             if (source == null || target == null) {
               return "Table not found: " + (source == null ? fromTable : toTable);
             }
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Table not on diagram: "
+                  + (fromElement == null ? fromTable : toTable);
+            }
 
             IDBForeignKey fk = getModelElementFactory().createDBForeignKey();
             fk.setFrom(source);
@@ -120,7 +127,7 @@ public class ErdMcpTools extends AbstractDiagramMcpTools {
             }
             fk.setFromMultiplicity("1");
             fk.setToMultiplicity("*");
-            getDiagramManager().createDiagramElement(diagram, fk);
+            getDiagramManager().createConnector(diagram, fk, fromElement, toElement, null);
 
             return "Added foreign key from '" + fromTable + "' to '" + toTable + "'";
           });
@@ -151,6 +158,12 @@ public class ErdMcpTools extends AbstractDiagramMcpTools {
             if (source == null || target == null) {
               return "Table not found: " + (source == null ? fromTable : toTable);
             }
+            IDiagramElement fromElement = findDiagramElementByModel(diagram, source);
+            IDiagramElement toElement = findDiagramElementByModel(diagram, target);
+            if (fromElement == null || toElement == null) {
+              return "Table not on diagram: "
+                  + (fromElement == null ? fromTable : toTable);
+            }
 
             IDBForeignKey fk = getModelElementFactory().createDBForeignKey();
             fk.setFrom(source);
@@ -166,7 +179,7 @@ public class ErdMcpTools extends AbstractDiagramMcpTools {
             } else {
               fk.setIdentifying(false);
             }
-            getDiagramManager().createDiagramElement(diagram, fk);
+            getDiagramManager().createConnector(diagram, fk, fromElement, toElement, null);
 
             return "Added " + type + " relationship from '" + fromTable + "' to '" + toTable + "'";
           });

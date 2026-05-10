@@ -26,3 +26,5 @@ target/
 /.nb-gradle/
 
 /.direnv/
+stub-libs/
+vp-lib/
