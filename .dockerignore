@@ -1,0 +1,10 @@
+target/
+.git/
+.gitignore
+*.md
+!README.md
+.claude/
+.idea/
+*.iml
+checkstyle.xml
+pmd-rules.xml

@@ -1,75 +1,73 @@
 # PROJECT_STATUS.md
 
-## Task Completed: MCP Server Integration into Plugin
+## Current State: Custom MCP Server (Java 11, Undertow)
 
 ### Overview
-Successfully moved the MCP (Model Context Protocol) server from a separate module into the Visual Paradigm plugin structure, integrating it as a core component of the use case plugin.
+Replaced Spring Boot/Spring AI MCP stack with a custom lightweight MCP server using Undertow HTTP + Jackson. The server runs on Java 11 (compatible with Visual Paradigm's JVM) and implements the MCP JSON-RPC protocol over SSE transport.
 
-### Changes Made
+### Architecture
 
-#### Structure Changes
-- **Removed**: `/spring-ai-mcp-server/` directory (completely removed old separate structure)
-- **Added**: `/src/main/java/com/brunnen/vp/usecase/mcp/` package for MCP integration
-- **Added**: `/src/test/java/com/brunnen/vp/usecase/mcp/` for MCP tests
+- **MCP Server**: Custom `McpServer.java` using Undertow embedded HTTP server
+- **Transport**: SSE (Server-Sent Events) - GET `/sse` for event stream, POST `/mcp/messages` for JSON-RPC
+- **Protocol**: MCP JSON-RPC 2.0 (initialize, tools/list, tools/call)
+- **Tool Discovery**: Custom `@Tool` annotation + Java reflection (replaces Spring AI)
+- **Port**: 2026 (configurable)
 
-#### New MCP Classes
-1. **McpServer.java** - Main MCP server controller
-   - Manages Spring Boot application lifecycle
-   - Start/stop functionality
-   - Health checking capabilities
+### MCP Tool Services (34 tools total)
 
-2. **UseCaseMcpToolsService.java** - Use case specific MCP tools
-   - `createUseCaseDiagram()` - Creates new use case diagrams
-   - `addActor()` - Adds actors to diagrams
-   - `addUseCase()` - Adds use cases to diagrams
-   - `addRelationship()` - Creates relationships between actors and use cases
-   - `generateReport()` - Generates use case reports
+| Category | Tools | Count |
+|----------|-------|-------|
+| Management | listDiagrams, getDiagramElements, autoLayoutDiagram, removeDiagramElement | 4 |
+| Use Case | create, addActor, addUseCase, addRelationship, generateReport | 5 |
+| Class | create, addClass, addAttribute, addOperation, addAssociation, addGeneralization, addAggregation, addComposition, addDependency, addRealization, addInterface, generateReport | 12 |
+| ERD | create, addTable, addColumn, addForeignKey, addTableRelationship, generateDdl, generateReport | 7 |
+| Sequence | create, addLifeline, addActivation, addMessage, addReturnMessage, addCombinedFragment, generateReport | 7 |
 
-3. **Test Classes**
-   - `McpServerTest.java` - Tests Spring context loading
-   - `UseCaseMcpToolsServiceTest.java` - Tests all MCP tool methods
+### Key Files
 
-#### Plugin Integration
-- **VPUseCasePlugin.java** updated to start/stop MCP server during plugin lifecycle
-- MCP server starts when plugin is loaded
-- MCP server stops when plugin is unloaded
-- Error handling for MCP server startup/shutdown
+| File | Purpose |
+|------|---------|
+| `McpServer.java` | Undertow-based MCP server with SSE transport |
+| `tool/Tool.java` | Custom `@Tool` annotation |
+| `tool/ToolDefinition.java` | Reflection-based tool scanning + JSON Schema generation |
+| `VPMcpPlugin.java` | VP plugin entry point, registers tools with McpServer |
+| `StandaloneServer.java` | Standalone entry for Docker (no VP dependency) |
+| `tools/UseCaseMcpTools.java` | 5 use case diagram tools |
+| `tools/ClassDiagramMcpTools.java` | 12 class diagram tools |
+| `tools/ErdMcpTools.java` | 7 ERD tools |
+| `tools/SequenceDiagramMcpTools.java` | 7 sequence diagram tools |
+| `util/DiagramUtils.java` | Shared VP API helpers (diagram/element lookup) |
 
-#### Dependencies Updated
-- Added Spring AI MCP Server dependencies to main pom.xml
-- Spring AI version: 1.1.0-M1
-- Spring Boot version: 3.4.1
-- Added JUnit 5 for better testing support
-- All MCP dependencies marked as `provided` scope
+### Dependencies
 
-#### Configuration
-- **application-mcp.properties** - MCP server configuration
-- Server runs on port 8080
-- SSE endpoint: `/mcp/messages`
-- Only tool capabilities enabled
-- Debug logging for MCP components
+- **Jackson 2.17.2** - JSON parsing
+- **Undertow 2.2.30.Final** - Embedded HTTP server
+- **VP OpenAPI 17.2** - Visual Paradigm plugin API (system scope)
+- **Java 11** - Target runtime
 
-### MCP Tools Available
-The plugin now exposes these MCP tools for external interaction:
+### Docker
 
-1. **createUseCaseDiagram(diagramName)** - Creates new use case diagrams
-2. **addActor(actorName, diagramName)** - Adds actors to specific diagrams
-3. **addUseCase(useCaseName, diagramName)** - Adds use cases to diagrams
-4. **addRelationship(actorName, useCaseName, relationshipType)** - Creates relationships
-5. **generateReport(diagramName)** - Generates reports for diagrams
+```bash
+./run docker-build   # Build Docker image (Java 11)
+./run docker-up      # Start MCP server on port 2026
+./run docker-down    # Stop MCP server
+./run docker-logs    # View server logs
+```
 
-### Build Status
-- ✅ **Build**: Successful compilation
-- ✅ **Formatting**: Google Java Format applied
-- ✅ **Integration**: MCP server properly integrated into plugin lifecycle
-- ✅ **Dependencies**: All Spring AI MCP dependencies resolved
-- ✅ **Testing**: Test structure in place with proper Spring context
+Docker uses multi-stage build with VP API stub JAR for compilation.
 
-### Next Steps
-The MCP server is now integrated into the plugin. Future work includes:
-1. Implementing actual Visual Paradigm API calls in the tool methods (currently placeholder implementations)
-2. Testing MCP server functionality with external MCP clients
-3. Adding more sophisticated use case operations
-4. Error handling and validation improvements
+### MCP Endpoints
 
-The plugin now provides MCP server capabilities that can be consumed by Claude and other MCP-compatible tools for automated Visual Paradigm use case diagram creation and management.
+- **SSE**: `http://localhost:2026/sse` - Establish SSE connection, returns session ID
+- **Messages**: `http://localhost:2026/mcp/messages?sessionId=<id>` - Send JSON-RPC requests
+
+### Verified
+
+- [x] Custom MCP server compiles and runs on Java 11
+- [x] SSE transport works (endpoint event, keep-alive, session management)
+- [x] MCP protocol: initialize, tools/list, tools/call
+- [x] 34 tools registered and invocable via JSON-RPC
+- [x] Docker build succeeds with Java 11
+- [x] VP plugin loads successfully (verified in VP log)
+- [x] Connectors use `createConnector()` with IDiagramElement refs (not `createDiagramElement`)
+- [x] Diagram management tools: listDiagrams, getDiagramElements, autoLayoutDiagram, removeDiagramElement

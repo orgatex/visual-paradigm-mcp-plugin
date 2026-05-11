@@ -25,26 +25,46 @@ The plugin includes an embedded MCP server that:
 - Runs on **port 8080** with SSE endpoint `/mcp/messages`
 - Provides **tool capabilities** for external MCP clients
 
-#### Available MCP Tools
+#### Available MCP Tools (31 total)
 
+##### Use Case Diagram (5 tools)
 - **createUseCaseDiagram(diagramName)**: Create new use case diagrams
 - **addActor(actorName, diagramName)**: Add actors to specific diagrams
 - **addUseCase(useCaseName, diagramName)**: Add use cases to diagrams
-- **addRelationship(actorName, useCaseName, relationshipType)**: Create relationships between actors and use cases
-- **generateReport(diagramName)**: Generate reports for use case diagrams
+- **addRelationship(sourceName, targetName, relationshipType)**: Create Include/Extend relationships
+- **generateUseCaseReport(diagramName)**: Generate use case analysis report
 
-#### Future MCP Features (Planned)
+##### Class Diagram (12 tools)
+- **createClassDiagram(diagramName)**: Create new class diagrams
+- **addClass(diagramName, className)**: Add classes to diagrams
+- **addAttribute(className, attributeName, attributeType, visibility)**: Add attributes to classes
+- **addOperation(className, operationName, returnType, params)**: Add operations/methods to classes
+- **addAssociation(diagramName, fromClass, toClass, fromMultiplicity, toMultiplicity, name)**: Add associations
+- **addGeneralization(diagramName, fromClass, toClass)**: Add inheritance relationships
+- **addAggregation(diagramName, fromClass, toClass, fromMultiplicity, toMultiplicity)**: Add aggregation
+- **addComposition(diagramName, fromClass, toClass, fromMultiplicity, toMultiplicity)**: Add composition
+- **addDependency(diagramName, fromClass, toClass)**: Add dependency relationships
+- **addRealization(diagramName, fromClass, toClass)**: Add interface realization
+- **addInterface(diagramName, interfaceName)**: Add interfaces with stereotype
+- **generateClassReport(diagramName)**: Generate class diagram analysis report
 
-##### Resources
+##### ERD - Entity Relationship Diagram (7 tools)
+- **createErd(diagramName)**: Create new ER diagrams
+- **addTable(diagramName, tableName)**: Add tables to ER diagrams
+- **addColumn(tableName, columnName, columnType, length, scale, isPrimaryKey, isNullable)**: Add columns
+- **addForeignKey(diagramName, fromTable, toTable, fromColumn, toColumn, relationshipName)**: Add FK relationships
+- **addTableRelationship(diagramName, fromTable, toTable, type, fromMultiplicity, toMultiplicity)**: Add identifying/non-identifying relationships
+- **generateDdl(diagramName)**: Generate CREATE TABLE DDL statements
+- **generateErdReport(diagramName)**: Generate ERD analysis report
 
-- Server Status: Monitor MCP server health and connection status
-- Project Information: Retrieve current project details
-- Diagram Metadata: Access diagram properties and structure
-
-##### Prompts
-
-- Use Case Templates: Generate standard use case patterns
-- Diagram Validation: Check diagram completeness and consistency
+##### Sequence Diagram (7 tools)
+- **createSequenceDiagram(diagramName)**: Create new sequence diagrams
+- **addLifeline(diagramName, lifelineName, className)**: Add lifelines (participants)
+- **addActivation(diagramName, lifelineName)**: Add activation bars
+- **addMessage(diagramName, fromLifeline, toLifeline, messageName, sequenceNumber, messageType)**: Add sync/async messages
+- **addReturnMessage(diagramName, fromLifeline, toLifeline, messageName, sequenceNumber)**: Add return messages
+- **addCombinedFragment(diagramName, operator, guard, coveredLifelines)**: Add alt/opt/loop fragments
+- **generateSequenceReport(diagramName)**: Generate sequence diagram analysis report
 
 ### Plugin User Interface
 
@@ -88,8 +108,8 @@ Build, test and install with the `./run` command:
 Once Visual Paradigm is running with the plugin:
 
 - **MCP Server Endpoint**: `http://localhost:8080/mcp/messages` (SSE)
-- **Server Name**: `visual-paradigm-use-case-mcp-server`
-- **Available Tools**: 5 use case diagram operations
+- **Server Name**: `visual-paradigm-mcp-server`
+- **Available Tools**: 31 diagram operations (Use Case, Class, ERD, Sequence)
 
 #### Connecting with Claude or MCP Clients
 
@@ -156,7 +176,7 @@ Display all MCP features and their descriptions:
 
 **MCP Server Logging**: Check Visual Paradigm console output for:
 
-- `"MCP Server started for Use Case Plugin"` - successful startup
+- `"MCP Server started on port 8080"` - successful startup
 - `"MCP Server stopped"` - clean shutdown
 - Error messages if startup fails
 

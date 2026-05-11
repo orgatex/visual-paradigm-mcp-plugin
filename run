@@ -9,7 +9,13 @@ set -e # Exit on any error
 PLUGIN_NAME="visual-paradigm-mcp-plugin"
 PLUGIN_VERSION="0.1.0"
 MAVEN_OPTS="-Xmx1g"
-VP_PLUGINS_DIR="${HOME}/.config/VisualParadigm/plugins"
+
+# Detect OS and set VP plugins directory
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    VP_PLUGINS_DIR="${HOME}/Library/Application Support/VisualParadigm/plugins"
+else
+    VP_PLUGINS_DIR="${HOME}/.config/VisualParadigm/plugins"
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -42,20 +48,24 @@ show_help() {
 	echo "Usage: $0 [COMMAND]"
 	echo
 	echo "Commands:"
-	echo "  build       - Clean and build the plugin"
-	echo "  format      - Format Java code with Google Java Format"
-	echo "  test        - Run unit tests"
-	echo "  package     - Package the plugin for distribution"
-	echo "  install     - Install plugin to Visual Paradigm"
-	echo "  uninstall   - Remove plugin from Visual Paradigm"
-	echo "  clean       - Clean build artifacts"
-	echo "  validate    - Validate plugin configuration"
-	echo "  standalone  - Test standalone MCP server"
-	echo "  health      - Check plugin health"
-	echo "  spotbugs    - Run SpotBugs static analysis"
-	echo "  pmd         - Run PMD static analysis"
-	echo "  all         - Run build, test, package, and install"
-	echo "  help        - Show this help message"
+	echo "  build         - Clean and build the plugin"
+	echo "  format        - Format Java code with Google Java Format"
+	echo "  test          - Run unit tests"
+	echo "  package       - Package the plugin for distribution"
+	echo "  install       - Install plugin to Visual Paradigm"
+	echo "  uninstall     - Remove plugin from Visual Paradigm"
+	echo "  clean         - Clean build artifacts"
+	echo "  validate      - Validate plugin configuration"
+	echo "  standalone    - Test standalone MCP server"
+	echo "  health        - Check plugin health"
+	echo "  spotbugs      - Run SpotBugs static analysis"
+	echo "  pmd           - Run PMD static analysis"
+	echo "  all           - Run build, test, package, and install"
+	echo "  docker-build  - Build Docker image"
+	echo "  docker-up     - Start MCP server in Docker"
+	echo "  docker-down   - Stop Docker MCP server"
+	echo "  docker-logs   - View Docker MCP server logs"
+	echo "  help          - Show this help message"
 	echo
 }
 
@@ -158,6 +168,25 @@ main() {
 		export MAVEN_OPTS
 		mvn clean compile test package install -P install
 		log_success "Complete build process finished"
+		;;
+	docker-build)
+		log_info "Building Docker image for ${PLUGIN_NAME}..."
+		docker build -t "${PLUGIN_NAME}:${PLUGIN_VERSION}" .
+		docker tag "${PLUGIN_NAME}:${PLUGIN_VERSION}" "${PLUGIN_NAME}:latest"
+		log_success "Docker image built: ${PLUGIN_NAME}:${PLUGIN_VERSION}"
+		;;
+	docker-up)
+		log_info "Starting MCP server in Docker..."
+		docker compose up -d --build
+		log_success "MCP server started on http://localhost:2026/sse"
+		;;
+	docker-down)
+		log_info "Stopping Docker MCP server..."
+		docker compose down
+		log_success "Docker MCP server stopped"
+		;;
+	docker-logs)
+		docker compose logs -f
 		;;
 	help)
 		show_help
