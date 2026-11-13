@@ -2993,7 +2993,10 @@ public abstract class AbstractDiagramMcpTools {
       String message = text.toString();
       // "X has no referenced view. Delete X from the repository?": No (the view goes, the model
       // stays); "Do you want to mark X stopped?" after a destroy message: Yes (the X marker)
-      boolean unreferenced = message.contains("no referenced view");
+      // "Do you want to save the project?" while newProject closes the open one: No (the tool
+      // discards unsaved changes, as its description says)
+      boolean unreferenced =
+          message.contains("no referenced view") || message.contains("save the project");
       boolean stopped = message.contains("stopped");
       if (!unreferenced && !stopped) {
         continue;

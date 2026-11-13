@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "visual-paradigm",
-      "description": "Connects to the MCP server of the Visual Paradigm plugin (121 diagram tools) and adds a skill on how to use them.",
+      "description": "Connects to the MCP server of the Visual Paradigm plugin (124 diagram tools) and adds a skill on how to use them.",
       "source": "./plugin",
       "category": "development"
     }

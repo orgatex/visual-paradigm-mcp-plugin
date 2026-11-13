@@ -1794,7 +1794,10 @@ public class ClassDiagramMcpTools extends AbstractDiagramMcpTools {
     try {
       return runOnEdt(
           () -> {
-            boolean ok = ApplicationManager.instance().getProjectManager().newProject();
+            boolean ok =
+                answeringDeletePrompts(
+                    () -> ApplicationManager.instance().getProjectManager().newProject(),
+                    new ArrayList<>());
             IProject project = DiagramUtils.getProject();
             return ok && project != null
                 ? "Created new project: " + project.getName()

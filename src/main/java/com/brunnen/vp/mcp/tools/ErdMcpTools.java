@@ -1,20 +1,30 @@
 package com.brunnen.vp.mcp.tools;
 
 import com.brunnen.vp.mcp.tool.Tool;
+import com.brunnen.vp.mcp.util.ClassModelReader;
 import com.brunnen.vp.mcp.util.DiagramUtils;
 import com.brunnen.vp.mcp.util.ErdLayoutProfile;
 import com.brunnen.vp.mcp.util.ErdUtils;
 import com.brunnen.vp.mcp.util.LayoutProfile;
+import com.brunnen.vp.mcp.util.OrmErdPlanner;
+import com.brunnen.vp.mcp.util.SqlGenerator;
+import com.vp.plugin.ApplicationManager;
+import com.vp.plugin.DatabaseManager;
 import com.vp.plugin.DiagramManager;
 import com.vp.plugin.diagram.IDiagramElement;
 import com.vp.plugin.diagram.IDiagramTypeConstants;
 import com.vp.plugin.diagram.IDiagramUIModel;
 import com.vp.plugin.diagram.IERDiagramUIModel;
+import com.vp.plugin.model.DatabaseType;
+import com.vp.plugin.model.IAttribute;
+import com.vp.plugin.model.IClass;
 import com.vp.plugin.model.IDBColumn;
 import com.vp.plugin.model.IDBForeignKey;
 import com.vp.plugin.model.IDBForeignKeyConstraint;
 import com.vp.plugin.model.IDBTable;
 import com.vp.plugin.model.IModelElement;
+import com.vp.plugin.model.IORMAttributeDetail;
+import com.vp.plugin.model.IORMClassDetail;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -580,6 +590,60 @@ public class ErdMcpTools extends AbstractDiagramMcpTools {
   }
 
   @Tool(
+      name = "setPrimaryKey",
+      description =
+          "Choose the primary key of a table shown on an ER diagram: columnNames is one column or"
+              + " a comma-separated list (a composite key). The listed columns become the key (NOT"
+              + " NULL), every other column stops being part of it; foreign keys that reference the"
+              + " table follow Visual Paradigm's model")
+  public String setPrimaryKey(String diagramName, String tableName, String columnNames) {
+    try {
+      return runOnEdt(
+          () -> {
+            IDiagramUIModel diagram = findErd(diagramName);
+            IDBTable table = findTableOnDiagram(diagram, tableName);
+            if (table == null) {
+              return "Table not on diagram: " + tableName;
+            }
+            List<String> wanted = new ArrayList<>();
+            for (String n : (columnNames == null ? "" : columnNames).split(",")) {
+              if (!n.trim().isEmpty()) {
+                wanted.add(n.trim());
+              }
+            }
+            if (wanted.isEmpty()) {
+              return "columnNames must name at least one column of '" + tableName + "'";
+            }
+            for (String n : wanted) {
+              IDBColumn col = findColumnByName(table, n);
+              if (col == null) {
+                List<String> have = new ArrayList<>();
+                for (IDBColumn c : table.toDBColumnArray()) {
+                  have.add(c.getName());
+                }
+                return "Column '"
+                    + n
+                    + "' not found in table '"
+                    + tableName
+                    + "' (columns: "
+                    + String.join(", ", have)
+                    + ")";
+              }
+            }
+            String change = rekey(table, wanted);
+            return change == null
+                ? "Unchanged: the primary key of '"
+                    + tableName
+                    + "' is "
+                    + String.join(", ", wanted)
+                : "Primary key changed: " + change;
+          });
+    } catch (Exception e) {
+      return "Error setting primary key: " + e.getMessage();
+    }
+  }
+
+  @Tool(
       name = "removeTable",
       description =
           "Delete a table from the project (every diagram that shows it loses it). A table that is"
@@ -794,32 +858,659 @@ public class ErdMcpTools extends AbstractDiagramMcpTools {
   }
 
   @Tool(
-      name = "generateDdl",
-      description = "Generate CREATE TABLE DDL statements for all tables in an ER diagram")
-  public String generateDdl(String diagramName) {
+      name = "syncClassesToErd",
+      description =
+          "Class diagram to ERD (like Visual Paradigm's Synchronize to Entity Relationship"
+              + " Diagram): every class with the <<ORM Persistable>> stereotype on classDiagramName"
+              + " becomes a table on erdName (created when missing; tables already in the project"
+              + " are reused and only get the missing columns). Attributes become columns (String"
+              + " -> varchar(255), int -> integer, Date -> date, double, decimal(19,2), boolean,"
+              + " ...); an attribute named id, <class>Id, ma<Class> or with a <<PK>> stereotype is the primary"
+              + " key, otherwise an ID column is added. primaryKeys chooses the keys instead:"
+              + " \"KhachHang=maKhachHang; ChiTietHoaDon=maHoaDon,maMon\" (several attributes make a"
+              + " composite key; a class not named keeps the rule above; re-running with another"
+              + " choice moves the key). Associations: one-to-many puts a foreign key"
+              + " into the many side, one-to-one into the optional side, many-to-many becomes a join"
+              + " table; a generalization makes the subclass share its superclass key (identifying"
+              + " foreign key, table per subclass). Classes and attributes are linked to their"
+              + " tables and columns (ORM mapping). Warns about classes without the stereotype,"
+              + " associations to non-persistable classes, missing multiplicities, untyped or"
+              + " unknown types and multi-valued attributes")
+  public String syncClassesToErd(String classDiagramName, String erdName, String primaryKeys) {
     try {
+      java.util.Map<String, List<String>> keys = OrmErdPlanner.parseKeys(primaryKeys);
       return runOnEdt(
           () -> {
-            IDiagramUIModel diagram =
+            com.vp.plugin.diagram.IClassDiagramUIModel classDiagram =
+                (com.vp.plugin.diagram.IClassDiagramUIModel)
+                    DiagramUtils.findDiagramByName(
+                        classDiagramName, com.vp.plugin.diagram.IClassDiagramUIModel.class);
+            if (classDiagram == null) {
+              return diagramNotFound(classDiagramName);
+            }
+            if (!isSet(erdName)) {
+              return "erdName must not be empty";
+            }
+            ClassModelReader.Shown shown = ClassModelReader.shown(classDiagram);
+            List<OrmErdPlanner.ClassSpec> specs = new ArrayList<>();
+            List<OrmErdPlanner.AssocSpec> assocs = new ArrayList<>();
+            ClassModelReader.ormSpecs(shown, specs, assocs);
+            OrmErdPlanner.Plan plan = OrmErdPlanner.plan(specs, assocs, keys);
+            if (plan.tables.isEmpty()) {
+              return "No class on '"
+                  + classDiagramName
+                  + "' has the <<"
+                  + OrmErdPlanner.PERSISTABLE
+                  + ">> stereotype: nothing to synchronize. Mark the entity classes with"
+                  + " addStereotypeToClasses(diagramName, classNames, \""
+                  + OrmErdPlanner.PERSISTABLE
+                  + "\", \"\")"
+                  + warningsText(plan.warnings);
+            }
+
+            IDiagramUIModel erd =
                 (IDiagramUIModel)
-                    DiagramUtils.findDiagramByName(diagramName, IDiagramUIModel.class);
-            if (diagram == null) {
-              return diagramNotFound(diagramName);
+                    DiagramUtils.findDiagramByName(erdName.trim(), IERDiagramUIModel.class);
+            boolean created = erd == null;
+            if (created) {
+              erd = newDiagram(IDiagramTypeConstants.DIAGRAM_TYPE_ER_DIAGRAM, erdName.trim());
+              erd.setAutoFitShapesSize(true);
+              useCenterConnectionPoints(erd);
+            }
+            java.util.Map<String, IClass> classByName = new java.util.HashMap<>();
+            for (IClass cls : shown.classes) {
+              classByName.putIfAbsent(cls.getName(), cls);
             }
 
-            List<IDBTable> tables = ErdUtils.getTablesInDiagram(diagram);
-            if (tables.isEmpty()) {
-              return "No tables found in diagram: " + diagramName;
+            List<String> newTables = new ArrayList<>();
+            List<String> reusedTables = new ArrayList<>();
+            List<String> newColumns = new ArrayList<>();
+            List<String> changedKeys = new ArrayList<>();
+            java.util.Map<String, IDBTable> tables = new java.util.LinkedHashMap<>();
+            for (OrmErdPlanner.Table t : plan.tables) {
+              IDBTable table = findTableOnDiagram(erd, t.name);
+              if (table == null) {
+                table = findRootElement(t.name, IDBTable.class);
+              }
+              boolean reused = table != null;
+              if (!reused) {
+                table = getModelElementFactory().createDBTable();
+                nameInOwner(table, null, t.name);
+                newTables.add(t.name);
+              } else {
+                reusedTables.add(t.name);
+              }
+              IClass cls = t.className == null ? null : classByName.get(t.className);
+              for (OrmErdPlanner.Column c : t.columns) {
+                IDBColumn col = findColumnByName(table, c.name);
+                if (col == null) {
+                  col = getModelElementFactory().createDBColumn();
+                  col.setName(c.name);
+                  setColumnType(col, c.type, c.length, c.scale, plan.warnings, t.name);
+                  // a key column added to a referenced table goes through rekey (children)
+                  col.setPrimaryKey(c.primaryKey && !reused);
+                  col.setNullable(c.nullable);
+                  table.addDBColumn(col);
+                  if (reused) {
+                    newColumns.add(t.name + "." + c.name);
+                  }
+                }
+                if (cls != null && c.attribute != null) {
+                  linkAttribute(cls, c.attribute, col);
+                }
+              }
+              if (reused && t.hasPrimaryKey()) {
+                // the key chosen now wins over the last sync; a key column that is also a
+                // foreign key (shared with a superclass, a join table's) stays in the key
+                List<String> wanted = new ArrayList<>();
+                for (OrmErdPlanner.Column c : t.columns) {
+                  if (c.primaryKey) {
+                    wanted.add(c.name);
+                  }
+                }
+                for (IDBColumn col : table.toDBColumnArray()) {
+                  if (col.isPrimaryKey() && isForeignKeyColumn(col)) {
+                    wanted.add(col.getName());
+                  }
+                }
+                String change = rekey(table, wanted);
+                if (change != null) {
+                  changedKeys.add(change);
+                  // a column that left the key takes the attribute's nullability again
+                  for (OrmErdPlanner.Column c : t.columns) {
+                    IDBColumn col = findColumnByName(table, c.name);
+                    if (col != null && !c.primaryKey && !isForeignKeyColumn(col)) {
+                      col.setNullable(c.nullable);
+                    }
+                  }
+                }
+              }
+              if (cls != null) {
+                linkClass(cls, table);
+              }
+              tables.put(t.name, table);
+              if (findDiagramElementByModel(erd, table) == null) {
+                IDiagramElement de = addToDiagram(erd, table, t.name);
+                de.resetCaption();
+              }
             }
 
-            StringBuilder ddl = new StringBuilder();
-            for (IDBTable table : tables) {
-              ddl.append(ErdUtils.generateCreateTableSql(table)).append("\n\n");
+            List<String> fkAdded = new ArrayList<>();
+            for (OrmErdPlanner.ForeignKey f : plan.foreignKeys) {
+              IDBTable parent = tables.get(f.parent);
+              IDBTable child = tables.get(f.child);
+              if (parent == null || child == null) {
+                continue;
+              }
+              if (!foreignKeysBetween(parent, child).isEmpty()) {
+                continue; // synchronized before: the line is drawn by showExistingForeignKeys
+              }
+              IDBForeignKey fk = getModelElementFactory().createDBForeignKey();
+              fk.setFrom(parent);
+              fk.setTo(child);
+              fk.setFromMultiplicity(f.fromMultiplicity);
+              fk.setToMultiplicity(f.toMultiplicity);
+              fk.setIdentifying(f.identifying);
+              IDiagramElement connector =
+                  connectShapes(
+                      erd,
+                      fk,
+                      findDiagramElementByModel(erd, parent),
+                      findDiagramElementByModel(erd, child));
+              if (connector == null) {
+                fk.delete();
+                plan.warnings.add(
+                    "Visual Paradigm refused the foreign key " + f.parent + " -> " + f.child);
+                continue;
+              }
+              nameForeignKeyColumns(fk, child, parent, "generalization".equals(f.source));
+              fkAdded.add(f.toString());
             }
-            return ddl.toString();
+            showExistingForeignKeys(erd);
+            for (IDBTable table : tables.values()) {
+              IDiagramElement de = findDiagramElementByModel(erd, table);
+              if (de != null) {
+                fitShape(de);
+              }
+            }
+            relayout(erd);
+            getDiagramManager().openDiagram(erd);
+
+            StringBuilder out = new StringBuilder();
+            out.append(created ? "Created" : "Updated")
+                .append(" ER diagram '")
+                .append(erd.getName())
+                .append("' from '")
+                .append(classDiagramName)
+                .append("': ")
+                .append(tables.size())
+                .append(" table(s)");
+            if (!newTables.isEmpty()) {
+              out.append("; new: ").append(String.join(", ", newTables));
+            }
+            if (!reusedTables.isEmpty()) {
+              out.append("; existing: ").append(String.join(", ", reusedTables));
+            }
+            if (!newColumns.isEmpty()) {
+              out.append("; added columns: ").append(String.join(", ", newColumns));
+            }
+            if (!changedKeys.isEmpty()) {
+              out.append("; primary key changed: ").append(String.join("; ", changedKeys));
+            }
+            out.append("; ").append(fkAdded.size()).append(" new foreign key(s)");
+            if (!fkAdded.isEmpty()) {
+              out.append(": ").append(String.join(", ", fkAdded));
+            }
+            out.append(warningsText(plan.warnings));
+            return out.toString();
           });
     } catch (Exception e) {
-      return "Error generating DDL: " + e.getMessage();
+      return "Error synchronizing classes to ERD: " + e.getMessage();
+    }
+  }
+
+  /**
+   * Readable names for the columns Visual Paradigm added for a foreign key (it joins the parent's
+   * name and key: KhachHangmaKhachHang, PhongHatid): the referenced key's own name (maKhachHang),
+   * or parent + Id for a key named id (phongHatId); a subclass keeps its superclass key's name. A
+   * name already taken in the child keeps Visual Paradigm's.
+   */
+  private static void nameForeignKeyColumns(
+      IDBForeignKey fk, IDBTable child, IDBTable parent, boolean inherited) {
+    Iterator<?> it = fk.foreignKeyColumnsIterator();
+    while (it.hasNext()) {
+      Object o = it.next();
+      if (!(o instanceof IDBColumn)) {
+        continue;
+      }
+      IDBColumn col = (IDBColumn) o;
+      IDBForeignKeyConstraint[] constraints = col.toForeignKeyConstraintArray();
+      IDBColumn ref =
+          constraints == null || constraints.length == 0 ? null : constraints[0].getRefColumn();
+      if (ref == null) {
+        continue;
+      }
+      String name = ref.getName();
+      if (!inherited && "id".equalsIgnoreCase(name)) {
+        String p = parent.getName();
+        name = Character.toLowerCase(p.charAt(0)) + p.substring(1) + "Id";
+      }
+      boolean taken = false;
+      for (IDBColumn other : child.toDBColumnArray()) {
+        if (!other.getId().equals(col.getId()) && name.equalsIgnoreCase(other.getName())) {
+          taken = true;
+        }
+      }
+      if (!taken && ErdUtils.isSqlIdentifier(name)) {
+        col.setName(name);
+      }
+    }
+  }
+
+  /**
+   * Make exactly {@code wanted} the primary key of a table. Visual Paradigm keeps the foreign keys
+   * that reference the table in step: it adds a column to every child for a new key column (named
+   * parent + column) but leaves the column of a dropped key behind. Those stale columns are
+   * deleted, the new ones get readable names, and a child whose key changed with it (identifying
+   * foreign key) passes the change on to its own children.
+   *
+   * @param table the table
+   * @param wanted names of the key columns
+   * @return "Table: a, b (was c)" when the key changed, null when it already was that key
+   */
+  private String rekey(IDBTable table, List<String> wanted) throws Exception {
+    List<String> before = new ArrayList<>();
+    for (IDBColumn col : table.toDBColumnArray()) {
+      if (col.isPrimaryKey()) {
+        before.add(col.getName());
+      }
+    }
+    if (new java.util.HashSet<>(before).equals(new java.util.HashSet<>(wanted))) {
+      return null;
+    }
+    // every table below this one, with the ids of its columns that referenced its parent
+    java.util.Map<String, java.util.Set<String>> referencing = new java.util.HashMap<>();
+    List<IDBForeignKey> cascade = new ArrayList<>();
+    java.util.ArrayDeque<IDBTable> todo = new java.util.ArrayDeque<>();
+    java.util.Set<String> visited = new java.util.HashSet<>();
+    todo.add(table);
+    while (!todo.isEmpty()) {
+      IDBTable parent = todo.poll();
+      if (!visited.add(parent.getId())) {
+        continue;
+      }
+      com.vp.plugin.model.ISimpleRelationship[] out = parent.toFromRelationshipArray();
+      for (com.vp.plugin.model.ISimpleRelationship r :
+          out == null ? new com.vp.plugin.model.ISimpleRelationship[0] : out) {
+        if (r instanceof IDBForeignKey && r.getTo() instanceof IDBTable) {
+          IDBForeignKey fk = (IDBForeignKey) r;
+          IDBTable child = (IDBTable) r.getTo();
+          cascade.add(fk);
+          java.util.Set<String> ids =
+              referencing.computeIfAbsent(fk.getId(), k -> new java.util.HashSet<>());
+          for (IDBColumn col : child.toDBColumnArray()) {
+            if (references(col, parent)) {
+              ids.add(col.getId());
+            }
+          }
+          if (fk.isIdentifying()) {
+            todo.add(child);
+          }
+        }
+      }
+    }
+    java.util.Map<String, java.util.Set<String>> columnsBefore = new java.util.HashMap<>();
+    for (IDBForeignKey fk : cascade) {
+      java.util.Set<String> ids = new java.util.HashSet<>();
+      for (IDBColumn col : ((IDBTable) fk.getTo()).toDBColumnArray()) {
+        ids.add(col.getId());
+      }
+      columnsBefore.put(fk.getId(), ids);
+    }
+
+    for (IDBColumn col : table.toDBColumnArray()) {
+      boolean key = wanted.contains(col.getName());
+      col.setPrimaryKey(key);
+      if (key) {
+        col.setNullable(false);
+      }
+    }
+
+    List<String> removed = new ArrayList<>();
+    for (IDBForeignKey fk : cascade) {
+      IDBTable parent = (IDBTable) fk.getFrom();
+      IDBTable child = (IDBTable) fk.getTo();
+      for (IDBColumn col : child.toDBColumnArray()) {
+        boolean stale =
+            referencing.get(fk.getId()).contains(col.getId()) && !referencesKey(col, parent);
+        if (stale) {
+          String name = child.getName() + "." + col.getName();
+          answeringDeletePrompts(
+              () -> {
+                col.delete();
+                return null;
+              },
+              new ArrayList<>());
+          removed.add(name);
+        }
+      }
+      boolean renameNew = false;
+      for (IDBColumn col : child.toDBColumnArray()) {
+        renameNew |= !columnsBefore.get(fk.getId()).contains(col.getId());
+      }
+      if (renameNew) {
+        nameForeignKeyColumns(
+            fk,
+            child,
+            parent,
+            fk.isIdentifying()
+                && IDBForeignKey.TO_MULTIPLICITY_ZERO_TO_ONE.equals(fk.getToMultiplicity()));
+      }
+    }
+    java.util.Set<String> refit = new java.util.HashSet<>();
+    refitTable(table);
+    for (IDBForeignKey fk : cascade) {
+      if (refit.add(fk.getTo().getId())) {
+        refitTable((IDBTable) fk.getTo());
+      }
+    }
+    return table.getName()
+        + ": "
+        + String.join(", ", wanted)
+        + (before.isEmpty() ? "" : " (was " + String.join(", ", before) + ")")
+        + (removed.isEmpty()
+            ? ""
+            : ", removed stale foreign key column(s) " + String.join(", ", removed));
+  }
+
+  /** Whether a column is a foreign key column referencing a column of {@code parent}. */
+  private static boolean references(IDBColumn col, IDBTable parent) {
+    IDBForeignKeyConstraint[] fks = col.toForeignKeyConstraintArray();
+    for (IDBForeignKeyConstraint fk : fks == null ? new IDBForeignKeyConstraint[0] : fks) {
+      IDBColumn ref = fk.getRefColumn();
+      if (ref != null
+          && ref.getParent() != null
+          && ref.getParent().getId().equals(parent.getId())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Whether a column references a primary key column of {@code parent}. */
+  private static boolean referencesKey(IDBColumn col, IDBTable parent) {
+    IDBForeignKeyConstraint[] fks = col.toForeignKeyConstraintArray();
+    for (IDBForeignKeyConstraint fk : fks == null ? new IDBForeignKeyConstraint[0] : fks) {
+      IDBColumn ref = fk.getRefColumn();
+      if (ref != null
+          && ref.isPrimaryKey()
+          && ref.getParent() != null
+          && ref.getParent().getId().equals(parent.getId())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean isForeignKeyColumn(IDBColumn col) {
+    IDBForeignKeyConstraint[] fks = col.toForeignKeyConstraintArray();
+    return fks != null && fks.length > 0;
+  }
+
+  private static boolean planned(OrmErdPlanner.Table t, String column) {
+    for (OrmErdPlanner.Column c : t.columns) {
+      if (c.name.equals(column)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static String warningsText(List<String> warnings) {
+    if (warnings.isEmpty()) {
+      return "";
+    }
+    return "\nWarnings (" + warnings.size() + "):\n  - " + String.join("\n  - ", warnings);
+  }
+
+  /** Set a column type, trying the standard spellings the project's database may know. */
+  private static void setColumnType(
+      IDBColumn col, String type, int length, int scale, List<String> warnings, String table) {
+    for (String candidate : ErdUtils.typeCandidates(type)) {
+      if (col.setType(candidate, length, scale)) {
+        return;
+      }
+    }
+    warnings.add(
+        "Visual Paradigm does not know the type '"
+            + type
+            + "' for column "
+            + table
+            + "."
+            + col.getName()
+            + ": left untyped");
+  }
+
+  /** ORM mapping class -> table, the link Visual Paradigm's synchronization keeps. */
+  private void linkClass(IClass cls, IDBTable table) {
+    try {
+      IORMClassDetail detail = cls.getOrmDetail();
+      if (detail == null) {
+        detail = getModelElementFactory().createORMClassDetail();
+        cls.setOrmDetail(detail);
+      }
+      detail.setTableModel(table);
+    } catch (RuntimeException e) {
+      // the mapping is a convenience: the tables and columns stand without it
+    }
+  }
+
+  /** ORM mapping attribute -> column. */
+  private void linkAttribute(IClass cls, String attribute, IDBColumn col) {
+    try {
+      IAttribute attr = cls.getAttributeByName(attribute);
+      if (attr == null) {
+        return;
+      }
+      IORMAttributeDetail detail = attr.getOrmDetail();
+      if (detail == null) {
+        detail = getModelElementFactory().createORMAttributeDetail();
+        attr.setOrmDetail(detail);
+      }
+      detail.setColumnModel(col);
+    } catch (RuntimeException e) {
+      // the mapping is a convenience: the column stands without it
+    }
+  }
+
+  @Tool(
+      name = "generateSql",
+      description =
+          "ERD to SQL: generate SQL for the tables shown on an ER diagram with Visual Paradigm's"
+              + " database generator. database: MySQL (default), MariaDB, MSSQLServer (sqlserver),"
+              + " PostgreSQL (postgres), Oracle, SQLite, H2, HSQL, Derby, DB2, ... statements: a"
+              + " comma-separated list of create (default; CREATE TABLE with primary and foreign"
+              + " keys, referenced tables first), drop, select, insert, update, delete. When Visual"
+              + " Paradigm's generator is not set up for the database (Tools > DB > Database"
+              + " Configuration) the plugin writes the SQL in that dialect itself (MySQL/MariaDB,"
+              + " PostgreSQL, SQL Server with NVARCHAR, Oracle, SQLite; generic for the others)."
+              + " outputFile: an absolute .sql path to write as well (empty: only returned)")
+  public String generateSql(
+      String diagramName, String database, String statements, String outputFile) {
+    try {
+      DatabaseType type = databaseType(database);
+      if (type == null) {
+        return "Unknown database '"
+            + database
+            + "': use one of "
+            + java.util.Arrays.toString(DatabaseType.values());
+      }
+      List<String> kinds = new ArrayList<>();
+      for (String k : (isSet(statements) ? statements : "create").split(",")) {
+        String kind = k.trim().toLowerCase(java.util.Locale.ROOT);
+        if (kind.isEmpty()) {
+          continue;
+        }
+        if (!java.util.Arrays.asList("create", "drop", "select", "insert", "update", "delete")
+            .contains(kind)) {
+          return "Unknown statement '"
+              + k.trim()
+              + "': use create, drop, select, insert,"
+              + " update or delete";
+        }
+        kinds.add(kind);
+      }
+      String sql =
+          runOnEdt(
+              () -> {
+                IDiagramUIModel diagram =
+                    (IDiagramUIModel)
+                        DiagramUtils.findDiagramByName(diagramName, IERDiagramUIModel.class);
+                if (diagram == null) {
+                  return null;
+                }
+                List<IDBTable> tables = ErdUtils.getTablesInDiagram(diagram);
+                if (tables.isEmpty()) {
+                  return "";
+                }
+                IModelElement[] elements = tables.toArray(new IModelElement[0]);
+                DatabaseManager db = ApplicationManager.instance().getDatabaseManager();
+                List<SqlGenerator.TableSpec> specs = tableSpecs(tables);
+                SqlGenerator.Dialect dialect = SqlGenerator.dialect(type.name());
+                StringBuilder b = new StringBuilder();
+                String vpProblem = null;
+                for (String kind : kinds) {
+                  b.append("-- ")
+                      .append(kind.toUpperCase(java.util.Locale.ROOT))
+                      .append(" (")
+                      .append(type)
+                      .append(")\n");
+                  String text = null;
+                  try {
+                    text = vpSql(db, type, kind, elements);
+                  } catch (RuntimeException e) {
+                    vpProblem = String.valueOf(e.getMessage()).trim();
+                  }
+                  if (text == null || text.trim().isEmpty()) {
+                    text = SqlGenerator.generate(dialect, kind, specs);
+                  }
+                  b.append(text.trim()).append("\n\n");
+                }
+                if (vpProblem != null) {
+                  b.insert(
+                      0,
+                      "-- Written by the plugin's "
+                          + dialect
+                          + " generator: Visual Paradigm's own generator needs the database set"
+                          + " up in Tools > DB > Database Configuration ("
+                          + vpProblem
+                          + ")\n\n");
+                }
+                return b.toString();
+              });
+      if (sql == null) {
+        return diagramNotFound(diagramName);
+      }
+      if (sql.isEmpty()) {
+        return "No tables on diagram: " + diagramName;
+      }
+      if (isSet(outputFile)) {
+        java.io.File file = new java.io.File(outputFile.trim());
+        if (!file.isAbsolute()) {
+          return "outputFile must be an absolute path: " + outputFile;
+        }
+        if (file.getParentFile() != null) {
+          java.nio.file.Files.createDirectories(file.getParentFile().toPath());
+        }
+        java.nio.file.Files.write(
+            file.toPath(), sql.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return "Wrote " + file.getAbsolutePath() + "\n\n" + sql;
+      }
+      return sql;
+    } catch (Exception e) {
+      return "Error generating SQL: " + e.getMessage();
+    }
+  }
+
+  /** The SQL of one statement kind from Visual Paradigm's generator (null or empty: none). */
+  private static String vpSql(
+      DatabaseManager db, DatabaseType type, String kind, IModelElement[] elements) {
+    switch (kind) {
+      case "drop":
+        return db.generateDropSQL(type, elements);
+      case "select":
+        return db.generateSelectSQL(type, elements);
+      case "insert":
+        return db.generateInsertSQL(type, elements);
+      case "update":
+        return db.generateUpdateSQL(type, elements);
+      case "delete":
+        return db.generateDeleteSQL(type, elements);
+      default:
+        return db.generateCreateSQL(type, elements);
+    }
+  }
+
+  /** The SQL generator's view of the tables: columns, keys and the columns they reference. */
+  private static List<SqlGenerator.TableSpec> tableSpecs(List<IDBTable> tables) {
+    List<SqlGenerator.TableSpec> specs = new ArrayList<>();
+    for (IDBTable table : tables) {
+      SqlGenerator.TableSpec t = new SqlGenerator.TableSpec(table.getName());
+      for (IDBColumn col : table.toDBColumnArray()) {
+        SqlGenerator.ColumnSpec c =
+            new SqlGenerator.ColumnSpec(
+                col.getName(), col.getTypeInText(), col.getLength(), col.getScale());
+        c.primaryKey = col.isPrimaryKey();
+        c.nullable = col.isNullable();
+        c.unique = col.isUnique();
+        IDBForeignKeyConstraint[] fks = col.toForeignKeyConstraintArray();
+        if (fks != null) {
+          for (IDBForeignKeyConstraint fk : fks) {
+            IDBColumn ref = fk.getRefColumn();
+            if (ref != null && ref.getParent() != null) {
+              c.refTable = ref.getParent().getName();
+              c.refColumn = ref.getName();
+              break;
+            }
+          }
+        }
+        t.add(c);
+      }
+      specs.add(t);
+    }
+    return specs;
+  }
+
+  /**
+   * The database type for a user spelling (case-insensitive name, or sqlserver/mssql, postgres,
+   * maria), MySQL when empty, null when unknown.
+   *
+   * @param name spelling
+   * @return the type or null
+   */
+  static DatabaseType databaseType(String name) {
+    String n = name == null ? "" : name.trim().toLowerCase(java.util.Locale.ROOT).replace(" ", "");
+    switch (n) {
+      case "":
+      case "mysql":
+        return DatabaseType.MySQL;
+      case "sqlserver":
+      case "mssql":
+      case "mssqlserver":
+        return DatabaseType.MSSQLServer;
+      case "postgres":
+      case "postgresql":
+        return DatabaseType.PostgreSQL;
+      case "maria":
+      case "mariadb":
+        return DatabaseType.MariaDB;
+      default:
+        for (DatabaseType t : DatabaseType.values()) {
+          if (t.name().equalsIgnoreCase(n)) {
+            return t;
+          }
+        }
+        return null;
     }
   }
 

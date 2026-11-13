@@ -5,7 +5,7 @@ description: Draw UML, ERD, BPMN, DFD and flowchart diagrams inside Visual Parad
 
 # Visual Paradigm MCP
 
-Drive Visual Paradigm (VP) through the 121 tools of the Visual Paradigm MCP plugin: create diagrams, add elements and relationships, let the plugin lay them out, verify the result, export PNG images, save the project.
+Drive Visual Paradigm (VP) through the 124 tools of the Visual Paradigm MCP plugin: create diagrams, add elements and relationships, let the plugin lay them out, verify the result, export PNG images, save the project.
 
 Full tool catalogue (name, parameters in order, purpose, per diagram family): [references/tools.md](references/tools.md). Read the section of the family you are drawing before the first call.
 
@@ -136,7 +136,7 @@ addTable(D, "customer")
 addColumn(D, "customer", "id", "integer", 10, 0, true, false, false)    // length, scale are ints
 addColumn(D, "customer", "name", "varchar", 255, 0, false, false, false)
 addForeignKey(D, "orders", "customer", "customer_id", "id", "fk_orders_customer")
-generateDdl(D)
+generateSql(D, "MySQL", "create", "")                                  // or PostgreSQL, sqlserver, Oracle, SQLite
 ```
 
 - Table and column names are SQL identifiers (letters, digits, `_`; no spaces or accents).
@@ -318,12 +318,26 @@ addBpmnMessageFlow(D, "Customer", "Order received", "order")             // betw
 - `renameElement(D, old, new)` renames the model element everywhere it is shown.
 - `removeDiagramElement(D, name)` removes the VIEW only; the model element stays in the project (lifelines, links, messages, activity flows and state transitions exist only on their diagram, so they are really deleted). `removeRelationship` deletes relationships from the MODEL on any diagram family (an unnamed connector too).
 - Prefer correcting with the remove/rename/set tools over deleting and rebuilding a diagram.
+- `setPrimaryKey(D, table, "a,b")` chooses a table's key (composite with commas); the FK columns of the child tables follow (stale ones are removed).
+
+### Class diagram to ERD, SQL and code
+
+```
+addStereotypeToClasses(C, "KhachHang,DatPhong", "ORM Persistable", "")   // required: only persistable classes become tables
+syncClassesToErd(C, "ERD - Karaoke", "KhachHang=maKhachHang; ChiTiet=maDon,maMon")   // "" = keys by name
+generateSql("ERD - Karaoke", "sqlserver", "create,drop", "/abs/path/schema.sql")
+generateCode(C, "java", "vn.karaoke.model", "/abs/path/src", true, true, "")    // or "C1, C2" for several diagrams
+```
+
+- `syncClassesToErd` maps attributes to typed columns (String -> varchar(255), int -> integer, Date -> date, decimal -> decimal(19,2), ...). Key: the `primaryKeys` choice, else an attribute named `id`, `<class>Id`, `ma<Class>` or with `<<PK>>`, else an `ID` column is added. One-to-many: FK in the many side (named after the referenced key: `maKhachHang`, or `phongHatId` for `id`); one-to-one: FK in the optional side; many-to-many: join table (the association name, else `A_B`); generalization: the subclass shares the superclass key. Re-running only adds what is missing and moves a changed key. Read the warnings it returns (no stereotype, association to a non-persistable class, missing multiplicity, untyped/unknown/multi-valued attribute) and fix the class diagram.
+- `generateSql` uses Visual Paradigm's generator when Tools > DB > Database Configuration is set up for that database; otherwise it says so in a comment and writes the SQL itself.
+- `generateCode` needs the class diagram(s) named; with `jpa` the `@JoinColumn`/`@JoinTable` names match `syncClassesToErd`, so pass the same `primaryKeys` to both.
 
 ## 7. Export and save
 
 - `exportDiagramImage(D, "/absolute/path/diagram.png")` writes `.png`, `.jpg` or `.jpeg`. Use absolute paths and open the result. A community or evaluation edition of VP adds a footer or watermark to exported images; that is licensing, not a tool error.
-- `generateUseCaseReport`, `generateClassReport`, `generateSequenceReport`, `generateErdReport`, `generateDdl` give text output (counts, relationship list, SQL) when text is wanted instead of or beside the image. Other families: `getElementCounts(D)`.
-- Finish with `saveProject` (or `saveProjectAs(filePath)` for a new `.vpp`; it does not overwrite an existing file). A modal VP dialog (save changes, delete from repository) can block `openProject` and quitting VP; the plugin answers the delete prompts itself, a save prompt you must handle in the VP window.
+- `generateUseCaseReport`, `generateClassReport`, `generateSequenceReport`, `generateErdReport`, `generateSql` give text output (counts, relationship list, SQL) when text is wanted instead of or beside the image. Other families: `getElementCounts(D)`.
+- Finish with `saveProject` (or `saveProjectAs(filePath)` for a new `.vpp`; it does not overwrite an existing file). A modal VP dialog (save changes, delete from repository) can block `openProject` and quitting VP; the plugin answers the delete prompts itself, `newProject` answers the save prompt with No (it discards unsaved changes).
 
 ## 8. Proven limitations (do not retry)
 

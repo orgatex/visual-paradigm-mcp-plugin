@@ -2,8 +2,6 @@ package com.brunnen.vp.mcp.util;
 
 import com.vp.plugin.diagram.IDiagramElement;
 import com.vp.plugin.diagram.IDiagramUIModel;
-import com.vp.plugin.model.IDBColumn;
-import com.vp.plugin.model.IDBForeignKeyConstraint;
 import com.vp.plugin.model.IDBTable;
 import com.vp.plugin.model.IModelElement;
 import java.util.ArrayList;
@@ -34,75 +32,6 @@ public final class ErdUtils {
       }
     }
     return tables;
-  }
-
-  /**
-   * Generate CREATE TABLE DDL for a table.
-   *
-   * @param table the table
-   * @return the DDL string
-   */
-  public static String generateCreateTableSql(IDBTable table) {
-    StringBuilder sql = new StringBuilder();
-    sql.append("CREATE TABLE ").append(table.getName()).append(" (\n");
-
-    List<String> primaryKeys = new ArrayList<>();
-    Iterator<?> colIter = table.dBColumnIterator();
-    boolean first = true;
-    while (colIter.hasNext()) {
-      Object obj = colIter.next();
-      if (obj instanceof IDBColumn) {
-        IDBColumn col = (IDBColumn) obj;
-        if (!first) {
-          sql.append(",\n");
-        }
-        sql.append("  ").append(col.getName()).append(" ").append(col.getTypeInText());
-        if (col.getLength() > 0) {
-          sql.append("(").append(col.getLength());
-          if (col.getScale() > 0) {
-            sql.append(",").append(col.getScale());
-          }
-          sql.append(")");
-        }
-        if (!col.isNullable()) {
-          sql.append(" NOT NULL");
-        }
-        if (col.isUnique() && !col.isPrimaryKey()) {
-          sql.append(" UNIQUE");
-        }
-        if (col.isPrimaryKey()) {
-          primaryKeys.add(col.getName());
-        }
-        first = false;
-      }
-    }
-
-    if (!primaryKeys.isEmpty()) {
-      sql.append(",\n  PRIMARY KEY (").append(String.join(", ", primaryKeys)).append(")");
-    }
-    // FOREIGN KEY clauses from the columns' foreign key constraints
-    Iterator<?> fkIter = table.dBColumnIterator();
-    while (fkIter.hasNext()) {
-      Object obj = fkIter.next();
-      if (obj instanceof IDBColumn) {
-        IDBColumn col = (IDBColumn) obj;
-        for (IDBForeignKeyConstraint constraint : col.toForeignKeyConstraintArray()) {
-          IDBColumn ref = constraint.getRefColumn();
-          if (ref != null && ref.getParent() != null) {
-            sql.append(",\n  FOREIGN KEY (")
-                .append(col.getName())
-                .append(") REFERENCES ")
-                .append(ref.getParent().getName())
-                .append("(")
-                .append(ref.getName())
-                .append(")");
-          }
-        }
-      }
-    }
-
-    sql.append("\n);");
-    return sql.toString();
   }
 
   /**

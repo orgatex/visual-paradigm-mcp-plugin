@@ -1,6 +1,6 @@
-# Visual Paradigm MCP tool catalogue (121 tools)
+# Visual Paradigm MCP tool catalogue (124 tools)
 
-Source of truth: the `@Tool(name=...)` methods in `src/main/java/com/brunnen/vp/mcp/tools/*.java` of the plugin (server version 1.32.8.0). Tool names and parameter order below were checked against that source; regenerate this file when the plugin changes. If a tool you need is missing from the session's tool list (the list is fixed when the MCP client starts), call it over plain HTTP, see "Calling conventions".
+Source of truth: the `@Tool(name=...)` methods in `src/main/java/com/brunnen/vp/mcp/tools/*.java` of the plugin (server version 1.33.0.0). Tool names and parameter order below were checked against that source; regenerate this file when the plugin changes. If a tool you need is missing from the session's tool list (the list is fixed when the MCP client starts), call it over plain HTTP, see "Calling conventions".
 
 ## Calling conventions
 
@@ -81,7 +81,7 @@ The class name is the lookup key. `addClass` reuses an existing class of the sam
 | `setAssociationProperties` | diagramName, fromClass, toClass, name, fromMultiplicity, toMultiplicity, fromRole, toRole, fromNavigable, toNavigable | Edit an existing association/aggregation/composition (either direction): name, multiplicities, roles (`-` clears a role), navigability true \| false \| unspecified. Empty string = keep. |
 | `getRelationshipDetails` | diagramName | JSON audit dump: classes (abstract, stereotype, owner, attributes, operations, bounds) and every relationship (multiplicity, aggregation kind, role, navigability, connector points). |
 
-## ERD (11)
+## ERD (13)
 
 Table and column names are SQL identifiers (letters, digits, `_`; no spaces or accents). A table with a name already in the project is the SAME table. Four tables per row.
 
@@ -96,8 +96,16 @@ Table and column names are SQL identifiers (letters, digits, `_`; no spaces or a
 | `renameColumn` | diagramName, tableName, columnName, newName | Rename a column. |
 | `removeTable` | diagramName, tableName | Delete a table from the project (all diagrams lose it); refused while it takes part in an FK. |
 | `removeForeignKey` | diagramName, parentTable, childTable | Remove the FK between the tables; the FK column stays in the child. |
-| `generateDdl` | diagramName | Generate `CREATE TABLE` statements for every table. |
+| `setPrimaryKey` | diagramName, tableName, columnNames | Make exactly these columns (comma-separated = composite) the key; the FK columns of the child tables follow (stale ones removed, new ones named after the key). |
+| `syncClassesToErd` | classDiagramName, erdName, primaryKeys | Class diagram to ERD: each `<<ORM Persistable>>` class becomes a table on `erdName` (created when missing, existing tables reused). `primaryKeys` = `"Class=attr1,attr2; Class2=attr"` or `""` (keys by name: id, `<class>Id`, `ma<Class>`, `<<PK>>`; else an `ID` column). 1-* = FK in the many side, 1-1 = FK in the optional side, *-* = join table, generalization = shared key. Returns warnings for classes without the stereotype, associations to non-persistable classes, missing multiplicities, untyped/unknown/multi-valued attributes. |
+| `generateSql` | diagramName, database, statements, outputFile | SQL for the tables of an ERD. `database`: MySQL (default), MariaDB, PostgreSQL/postgres, MSSQLServer/sqlserver, Oracle, SQLite, H2, ... `statements`: comma list of create (default), drop, select, insert, update, delete. VP's generator when configured, else the plugin's dialect generator. `outputFile`: absolute path or `""`. |
 | `generateErdReport` | diagramName | ERD report (also lists generated columns). |
+
+## Code generation (1)
+
+| Tool | Parameters (in order) | Purpose |
+|------|-----------------------|---------|
+| `generateCode` | diagramName, language, packageName, outputDir, jpa:bool, accessors:bool, primaryKeys | Instant generator. `diagramName` is required: one class diagram or several, comma-separated. `language`: java (default), csharp, python, typescript, php. Fields for attributes and navigable association ends, operation stubs, superclass, interfaces. `jpa` (Java): `<<ORM Persistable>>` classes get `@Entity`, `@Id`, relationship annotations matching `syncClassesToErd` (composite key = `@IdClass`). `accessors`: getters/setters or C# properties. `outputDir`: absolute folder, or `""` to return the code. |
 
 ## Sequence (7)
 

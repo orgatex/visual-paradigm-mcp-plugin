@@ -16,7 +16,7 @@ public final class ToolResults {
       Pattern.compile(
           "^(Added|Created|Bounds|Stereotype|Removed|Updated|Exported|Saved|Moved|Laid out|"
               + "Rerouted|Set|Shown|Renamed|Auto-layout|Opened|Generated|Elements|Geometry|Diagrams|"
-              + "Nothing to lay out|Re-?laid)\\b.*",
+              + "Nothing to lay out|Re-?laid|Wrote|Primary key|Unchanged)\\b.*",
           Pattern.DOTALL);
 
   /** What the first sentence of a failure says. */

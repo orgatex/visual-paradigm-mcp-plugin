@@ -23,7 +23,7 @@ Replaced Spring Boot/Spring AI MCP stack with a custom lightweight MCP server us
 - **Tool Discovery**: Custom `@Tool` annotation + Java reflection (replaces Spring AI)
 - **Port**: 2026 (configurable)
 
-### MCP Tool Services (121 tools total)
+### MCP Tool Services (124 tools total)
 
 | Category | Tools | Count |
 |----------|-------|-------|
@@ -31,7 +31,8 @@ Replaced Spring Boot/Spring AI MCP stack with a custom lightweight MCP server us
 | Use Case | create, addActor, addUseCase, addRelationship, addSystemBoundary, generateReport | 6 |
 | Class | create, addClass, addAttribute, addOperation, addAssociation, addGeneralization, addAggregation, addComposition, addDependency, addRealization, addInterface, addPackage, setClassColor, generateReport, setElementBounds, addStereotypeToClasses, removeRelationship, setAssociationProperties, getRelationshipDetails, rerouteConnectors, layoutConnectorLabels, exportDiagramImage, addPackageShape, moveIntoPackage, addUsage | 25 |
 | Project | newProject, openProject, saveProject, saveProjectAs, getProjectInfo | 5 |
-| ERD | create, addTable, addColumn, removeColumn, renameColumn, addForeignKey, removeForeignKey, addTableRelationship, removeTable, generateDdl, generateReport | 11 |
+| ERD | create, addTable, addColumn, removeColumn, renameColumn, addForeignKey, removeForeignKey, addTableRelationship, removeTable, setPrimaryKey, syncClassesToErd, generateSql, generateReport | 13 |
+| Code generation | generateCode | 1 |
 | Sequence | create, addLifeline, addActivation, addMessage, addReturnMessage, addCombinedFragment, generateReport | 7 |
 | State machine | createStateDiagram, addState, addInitialState, addFinalState, addTransition | 5 |
 | Activity | createActivityDiagram, addActivityPartition, addActivityAction, addActivityControlNode, addActivityObjectNode, addActivityFlow, addActivityFrame | 7 |
@@ -41,6 +42,38 @@ Replaced Spring Boot/Spring AI MCP stack with a custom lightweight MCP server us
 | Communication | createCommunicationDiagram, addCommunicationLifeline, addCommunicationLink, addCommunicationMessage, moveCommunicationLifeline | 5 |
 | Flowchart / DFD | createFlowchart, addFlowchartShape, addFlowchartFlow, createDataFlowDiagram, addDfdProcess, addDfdExternalEntity, addDfdDataStore, addDfdDataFlow | 8 |
 | BPMN | createBpmnDiagram, addBpmnPool, addBpmnLane, addBpmnTask, addBpmnEvent, addBpmnGateway, addBpmnDataObject, addBpmnSequenceFlow, addBpmnMessageFlow | 9 |
+
+### Class to ERD, ERD to SQL, code generation (server version 1.33.0.0)
+
+- **`syncClassesToErd(classDiagramName, erdName, primaryKeys)`**: Visual Paradigm's "Synchronize
+  to ERD" is not in the plugin API, so `OrmErdPlanner` (pure, unit tested) plans it: only
+  `<<ORM Persistable>>` classes become tables; attribute types map to SQL types; the key is the
+  `primaryKeys` choice (`Class=a,b; Class2=c`, composite allowed), else `id`/`<class>Id`/
+  `ma<Class>`/`<<PK>>`, else an added `ID`. 1-* puts the FK into the many side, 1-1 into the
+  optional side, *-* makes a join table (identifying FKs), a generalization an identifying FK
+  (table per subclass). The tool creates/reuses tables, links class -> table and attribute ->
+  column (`IORMClassDetail.setTableModel`, `IORMAttributeDetail.setColumnModel`), names the FK
+  columns after the referenced key (`maKhachHang`, `phongHatId` for `id`) and returns warnings
+  (no stereotype, association to a non-persistable class, missing multiplicity - VP reports it as
+  "Unspecified" -, untyped/unknown/multi-valued attributes). Re-running is idempotent.
+- **Key changes** (`setPrimaryKey`, a re-sync with another key) go through `rekey`: VP adds an FK
+  column to every child for a new key column but leaves the old one behind, so the stale columns
+  are deleted, the new ones renamed, and identifying children pass the change on.
+- **`generateSql(diagramName, database, statements, outputFile)`** (replaces `generateDdl`):
+  `DatabaseManager.generate*SQL` throws "Dialect class not found" until the database is set up in
+  Tools > DB > Database Configuration, then `SqlGenerator` (pure, unit tested) writes the dialect
+  itself: MySQL/MariaDB, PostgreSQL, SQL Server (NVARCHAR), Oracle, SQLite, generic; CREATE in
+  dependency order with named PK/FK constraints, DROP/DELETE dependents first, parameterized CRUD.
+- **`generateCode(diagramName, language, packageName, outputDir, jpa, accessors, primaryKeys)`**:
+  VP's Instant Generator is not in the API and its CLI (`scripts/InstantGenerator.sh`) does not
+  start on the bundled JRE 11 (`-XX:MaxPermSize`) and throws NPE headless, so `CodeGenerator`
+  (pure, unit tested) writes Java/C#/Python/TypeScript/PHP. `diagramName` is required and takes a
+  comma list. JPA (Java, persistable classes): `@Entity`, `@Id` (+ `@IdClass` for a composite
+  key), `@ManyToOne`/`@OneToMany(mappedBy)`/`@ManyToMany` + `@JoinTable`, column names equal to
+  `syncClassesToErd`'s. Generated Java compiles with javac, Python with py_compile.
+- `newProject` answers VP's "Do you want to save the project?" with No (it blocked the EDT).
+- Tests: `OrmErdPlannerTest`, `SqlGeneratorTest`, `CodeGeneratorTest`, `ToolResultsTest` (303 total).
+  Live check on a karaoke model (7 classes, 1-*, *-*, generalization, a non-persistable class).
 
 ### Reference-style rendering (matches the course's Visual Paradigm samples)
 

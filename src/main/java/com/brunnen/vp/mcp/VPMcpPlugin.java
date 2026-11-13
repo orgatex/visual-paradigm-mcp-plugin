@@ -3,6 +3,7 @@ package com.brunnen.vp.mcp;
 import com.brunnen.vp.mcp.tools.ActivityDiagramMcpTools;
 import com.brunnen.vp.mcp.tools.BpmnDiagramMcpTools;
 import com.brunnen.vp.mcp.tools.ClassDiagramMcpTools;
+import com.brunnen.vp.mcp.tools.CodeGenerationMcpTools;
 import com.brunnen.vp.mcp.tools.CommunicationDiagramMcpTools;
 import com.brunnen.vp.mcp.tools.ComponentDiagramMcpTools;
 import com.brunnen.vp.mcp.tools.DeploymentDiagramMcpTools;
@@ -44,7 +45,8 @@ public final class VPMcpPlugin implements VPPlugin {
           new PackageObjectDiagramMcpTools(),
           new CommunicationDiagramMcpTools(),
           new FlowchartDfdMcpTools(),
-          new BpmnDiagramMcpTools());
+          new BpmnDiagramMcpTools(),
+          new CodeGenerationMcpTools());
       mcpServer.start();
     } catch (Exception e) {
       System.err.println("Failed to start MCP server: " + e.getMessage());

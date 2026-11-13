@@ -25,7 +25,7 @@ The plugin includes an embedded MCP server that:
 - Runs on **port 2026** with the streamable HTTP endpoint `/mcp`
 - Provides **tool capabilities** for external MCP clients
 
-#### Available MCP Tools (121 total)
+#### Available MCP Tools (124 total)
 
 The main tools per diagram family are listed below. Project, layout and export helpers
 (for example `listDiagrams`, `exportDiagramImage`, `saveProject`) are also available, and so are
@@ -104,15 +104,20 @@ entities in rows; every message is an arrow beside its link, turned along the le
 - **addInterface(diagramName, interfaceName)**: Add interfaces with stereotype
 - **generateClassReport(diagramName)**: Generate class diagram analysis report
 
-##### ERD - Entity Relationship Diagram (7 tools)
+##### ERD - Entity Relationship Diagram (13 tools)
 - **createErd(diagramName)**: Create new ER diagrams
 - **addTable(diagramName, tableName)**: Add tables to ER diagrams
 - **addColumn(diagramName, tableName, columnName, columnType, length, scale, isPrimaryKey, isNullable, isUnique)**: Add columns to a table shown on the diagram (SQL Server types such as nvarchar/datetime are mapped to the project database's types; varchar without a length gets 255; isUnique draws the book's "U")
 - **addForeignKey(diagramName, fromTable, toTable, fromColumn, toColumn, relationshipName)**: Add an FK: fromTable (child) column fromColumn (created when it does not exist yet) references toTable (parent)
 - **addTableRelationship(diagramName, fromTable, toTable, type, fromMultiplicity, toMultiplicity)**: Add identifying/non-identifying relationships
 - **removeColumn(diagramName, tableName, columnName)**, **renameColumn(diagramName, tableName, columnName, newName)**, **removeForeignKey(diagramName, parentTable, childTable)**, **removeTable(diagramName, tableName)**: Correct a data model without rebuilding it
-- **generateDdl(diagramName)**: Generate CREATE TABLE DDL statements
+- **setPrimaryKey(diagramName, tableName, columnNames)**: Choose the primary key of a table (comma-separated = composite); foreign key columns in the child tables follow
+- **syncClassesToErd(classDiagramName, erdName, primaryKeys)**: Class diagram to ERD: every `<<ORM Persistable>>` class becomes a table (attributes = typed columns, key by name or chosen with `primaryKeys` such as `KhachHang=maKhachHang; ChiTiet=maDon,maMon`); one-to-many/one-to-one = foreign key, many-to-many = join table, generalization = shared key. Classes and attributes are mapped to their tables and columns; warns about classes without the stereotype, associations to non-persistable classes, missing multiplicities and unknown types
+- **generateSql(diagramName, database, statements, outputFile)**: ERD to SQL (create, drop, select, insert, update, delete) for MySQL, MariaDB, PostgreSQL, SQL Server, Oracle, SQLite and the other Visual Paradigm databases; uses Visual Paradigm's generator when its database configuration is set up, otherwise the plugin's own dialect-aware generator (referenced tables first)
 - **generateErdReport(diagramName)**: Generate ERD analysis report
+
+##### Code generation (1 tool)
+- **generateCode(diagramName, language, packageName, outputDir, jpa, accessors, primaryKeys)**: Instant generator: source skeletons (Java, C#, Python, TypeScript, PHP) for the classes, interfaces and enumerations of one or more chosen class diagrams (comma-separated): fields, association ends, method stubs, inheritance and realization; Java with `jpa` gets JPA annotations for `<<ORM Persistable>>` classes whose columns match `syncClassesToErd` (a composite `primaryKeys` gets an `@IdClass`). Writes into `outputDir` or returns the code
 
 ##### Sequence Diagram (7 tools)
 - **createSequenceDiagram(diagramName)**: Create new sequence diagrams
@@ -261,7 +266,7 @@ Once Visual Paradigm is running with the plugin:
 
 - **MCP Server Endpoint**: `http://localhost:2026/mcp` (streamable HTTP)
 - **Server Name**: `visual-paradigm-mcp-server`
-- **Available Tools**: 121 diagram operations (Use Case, Class, ERD, Sequence, State Machine,
+- **Available Tools**: 124 diagram operations (Use Case, Class, ERD, Sequence, State Machine,
   Activity, Component, Deployment, Package, Object, Communication, Flowchart, DFD, BPMN)
 
 #### Connecting with Claude or MCP Clients
