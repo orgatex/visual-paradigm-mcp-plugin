@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "visual-paradigm-mcp",
+  "description": "Draw UML, ERD, BPMN, DFD and flowchart diagrams in Visual Paradigm from Claude Code or Codex.",
+  "owner": {
+    "name": "orgatex",
+    "url": "https://github.com/orgatex"
+  },
+  "plugins": [
+    {
+      "name": "visual-paradigm",
+      "description": "Connects to the MCP server of the Visual Paradigm plugin (124 diagram tools) and adds a skill on how to use them.",
+      "source": "./plugin",
+      "category": "development"
+    }
+  ]
+}

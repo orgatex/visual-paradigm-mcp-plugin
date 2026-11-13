@@ -1,0 +1,20 @@
+services:
+  mcp-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vp-mcp-proxy
+    ports:
+      - "2027:2026"
+    environment:
+      - VP_API_URL=http://host.docker.internal:2026
+      - MCP_PORT=2026
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-X", "POST", "-H", "Content-Type: application/json", "-d", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}", "http://localhost:2026/mcp"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3

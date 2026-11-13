@@ -2,7 +2,7 @@
 <plugin id="visual-paradigm-mcp-plugin"
         name="MCP Server Plugin"
         provider="Manoel Brunnen"
-        class="com.brunnen.vp.usecase.VPUseCasePlugin">
+        class="com.brunnen.vp.mcp.VPMcpPlugin">
 
     <runtime>
     </runtime>
@@ -18,7 +18,7 @@
                     label="Create Use Case Diagram"
                     style="normal"
                     toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.CreateUseCaseDiagramActionController"/>
+                <actionController class="com.brunnen.vp.mcp.action.CreateUseCaseDiagramActionController"/>
             </action>
 
             <action id="usecase.ActionSet1.add-usecase"
@@ -26,7 +26,7 @@
                     label="Add Use Case"
                     style="normal"
                     toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.AddUseCaseActionController"/>
+                <actionController class="com.brunnen.vp.mcp.action.AddUseCaseActionController"/>
             </action>
 
             <action id="usecase.ActionSet1.add-actor"
@@ -34,7 +34,7 @@
                     label="Add Actor"
                     style="normal"
                     toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.AddActorActionController"/>
+                <actionController class="com.brunnen.vp.mcp.action.AddActorActionController"/>
             </action>
 
             <action id="usecase.ActionSet1.generate-report"
@@ -42,7 +42,7 @@
                     label="Generate Report"
                     style="normal"
                     toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.GenerateUseCaseReportActionController"/>
+                <actionController class="com.brunnen.vp.mcp.action.GenerateUseCaseReportActionController"/>
             </action>
 
             <action id="usecase.ActionSet1.add-relationship"
@@ -50,7 +50,7 @@
                     label="Relationship (include and extend)"
                     style="normal"
                     toolbarPath="usecase.ActionSet1.Toolbar1/#">
-                <actionController class="com.brunnen.vp.usecase.action.AddRelationshipActionController"/>
+                <actionController class="com.brunnen.vp.mcp.action.AddRelationshipActionController"/>
             </action>
         </actionSet>
     </actionSets>

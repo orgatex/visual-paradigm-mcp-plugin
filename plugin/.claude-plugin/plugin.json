@@ -1,0 +1,13 @@
+{
+  "name": "visual-paradigm",
+  "version": "1.33.0",
+  "description": "Connects to the MCP server of the Visual Paradigm plugin (124 diagram tools) and adds a skill on how to use them.",
+  "author": {
+    "name": "orgatex",
+    "url": "https://github.com/orgatex"
+  },
+  "homepage": "https://github.com/orgatex/visual-paradigm-mcp-plugin",
+  "repository": "https://github.com/orgatex/visual-paradigm-mcp-plugin",
+  "license": "Apache-2.0",
+  "keywords": ["visual-paradigm", "uml", "erd", "bpmn", "diagram", "mcp"]
+}
